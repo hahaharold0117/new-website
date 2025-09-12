@@ -1,3 +1,24 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
+/* keep your custom dark variant */
 @custom-variant dark (&:is(.dark *));
+
+/* Define design tokens that Tailwind will expose as classes */
+@theme {
+  --color-brand: #F97316;
+
+  /* Light mode */
+  --color-background: hsl(30 100% 98%); /* ≈ #fff8f3 */
+  --color-foreground: hsl(24 10% 10%);
+}
+
+/* Dark mode overrides (next-themes toggles .dark on <html>) */
+.dark {
+  --color-background: hsl(0 0% 6%);   /* ≈ #0f0f0f */
+  --color-foreground: hsl(0 0% 98%);
+}
+
+html, body { height: 100%; }
+
+/* Apply body colors with Tailwind utilities */
+body { @apply bg-background text-foreground antialiased; }

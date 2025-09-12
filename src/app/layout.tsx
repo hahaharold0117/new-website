@@ -2,8 +2,6 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { ThemeProvider } from "next-themes";
-
-import TopBar from "@/components/TopBar";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -32,7 +30,6 @@ export default function Layout({ children }: Readonly<{ children: ReactNode }>) 
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background text-foreground antialiased`}
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <TopBar />
           <Header />
           <main className="min-h-[48vh]">{children}</main>
           <Footer />

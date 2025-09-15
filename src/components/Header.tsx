@@ -26,10 +26,10 @@ export default function Header() {
             <Link href="/menu" className="block py-2 hover:text-brand">
               Menu
             </Link>
-            <Link href="#gallery" className="block py-2 hover:text-brand">
+            <Link href="/gallery" className="block py-2 hover:text-brand">
               Gallery
             </Link>
-            <Link href="#reservation" className="block py-2 hover:text-brand">
+            <Link href="/reservation" className="block py-2 hover:text-brand">
               Reservation
             </Link>
           </nav>

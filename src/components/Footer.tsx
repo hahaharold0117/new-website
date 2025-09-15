@@ -5,10 +5,9 @@ import { FaGoogle, FaXTwitter, FaFacebookF, FaGithub } from "react-icons/fa6";
 
 export default function Footer() {
   return (
-    <footer className="border-t bg-[#fffaf7]">
+    <footer className="">
       <Container>
         <div className="py-10 text-center space-y-6">
-          {/* Social icons */}
           <div className="flex justify-center gap-3">
             <a
               href="#"

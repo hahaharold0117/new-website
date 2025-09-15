@@ -24,7 +24,7 @@ export default function FeatureBullets() {
       {features.map(({ icon: Icon, title, desc }) => (
         <div
           key={title}
-          className="rounded-2xl border bg-white p-5 shadow-soft"
+          className="rounded-2xl bg-white p-5 border border-neutral-200"
         >
           <div className="flex items-start gap-4">
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand/10 text-brand">

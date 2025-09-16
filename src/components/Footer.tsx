@@ -5,7 +5,7 @@ import { FaGoogle, FaXTwitter, FaFacebookF, FaGithub } from "react-icons/fa6";
 
 export default function Footer() {
   return (
-    <footer className="">
+    <footer className="mt-auto">
       <Container>
         <div className="py-10 text-center space-y-6">
           <div className="flex justify-center gap-3">

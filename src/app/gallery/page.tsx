@@ -3,6 +3,8 @@
 import { RowsPhotoAlbum } from "react-photo-album";
 import "react-photo-album/rows.css";
 import Container from "@/components/Container";
+import { ChevronRight } from "lucide-react";
+import Link from "next/link";
 
 const photos = [
   { src: "https://images.unsplash.com/photo-1465311530779-5241f5a29892?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1600&q=80", width: 1600, height: 1000 },
@@ -15,6 +17,15 @@ const photos = [
 export default function Gallery() {
   return (
     <Container>
+      <h1 className="text-2xl font-bold mb-6 mt-6">Gallery</h1>
+      {/* Breadcrumb */}
+      <nav className="flex items-center text-sm text-gray-500 mb-2">
+        <Link href="/" className="hover:underline">
+          Home
+        </Link>
+        <ChevronRight className="w-4 h-4 mx-2" />
+        <span className="text-gray-700 font-medium">Gallery</span>
+      </nav>
       <RowsPhotoAlbum
         photos={photos}
         spacing={16}

@@ -51,7 +51,7 @@ export default function ReservationForm() {
     <Container>
       {/* Heading + breadcrumb */}
       <header className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Reservation</h1>
+        <h1 className="text-3xl font-bold tracking-tight mt-6">Reservation</h1>
         <nav className="mt-2 text-sm text-neutral-600">
           <ol className="flex items-center gap-2">
             <li><Link href="/" className="hover:underline">Home</Link></li>
@@ -62,11 +62,9 @@ export default function ReservationForm() {
       </header>
 
       <form onSubmit={submit} className="space-y-8">
-        {/* Contact Information */}
         <section>
           <h2 className="mb-4 text-lg font-semibold">Contact Information</h2>
 
-          {/* First row */}
           <div className="grid gap-6 md:grid-cols-3">
             <div>
               <label htmlFor="firstName" className="mb-1.5 block text-sm font-medium">
@@ -113,7 +111,7 @@ export default function ReservationForm() {
           </div>
 
           {/* Second row: time/date + note card aligned */}
-          <div className="mt-4 grid gap-6 md:grid-cols-3 items-start">
+          <div className="mt-4 grid gap-6 md:grid-cols-2 items-start">
             <div>
               <label htmlFor="time" className="mb-1.5 block text-sm font-medium">
                 Select Time
@@ -144,12 +142,12 @@ export default function ReservationForm() {
               />
             </div>
 
-            <div className="rounded-2xl border border-neutral-200 bg-white p-4 text-sm">
+            {/* <div className="rounded-2xl border border-neutral-200 bg-white p-4 text-sm">
               <p className="font-semibold">Note:</p>
               <p className="mt-1 text-neutral-600">
                 You can call us for reservations that include more than 8 people.
               </p>
-            </div>
+            </div> */}
           </div>
 
           {/* Guest Number (dropdown) */}
@@ -170,15 +168,10 @@ export default function ReservationForm() {
                   </option>
                 ))}
               </select>
-              {/* Chevron */}
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400">
-                ▾
-              </span>
             </div>
           </div>
         </section>
 
-        {/* Your note */}
         <section>
           <h2 className="mb-3 text-lg font-semibold">Your note</h2>
           <textarea

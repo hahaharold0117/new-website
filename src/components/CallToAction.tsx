@@ -19,7 +19,7 @@ export default function CallToAction() {
           </p>
 
           <Link
-            href="#menu"
+            href="/menu"
             className="mt-6 inline-flex rounded-md bg-white px-6 py-2 font-semibold text-black shadow hover:bg-neutral-50"
           >
             View Menu

@@ -1,17 +1,25 @@
+"use client";
+
 import Image from "next/image";
 import clsx from "clsx";
+
+type Props = {
+    title: string;
+    description?: string;
+    image?: string;
+    categories: string[];              // names to render as chips
+    activeName?: string | null;        // currently selected category name
+    onSelect?: (name: string) => void; // called when user clicks a chip
+};
 
 export default function CategoryHeader({
     title,
     description,
     image,
     categories,
-}: {
-    title: string;
-    description?: string;
-    image?: string;
-    categories: string[];
-}) {
+    activeName,
+    onSelect,
+}: Props) {
     return (
         <section>
             <div className="relative overflow-hidden rounded-2xl bg-[#FFF3EB]">
@@ -22,17 +30,9 @@ export default function CategoryHeader({
                     )}
                 </div>
 
-                {/* top-right image */}
                 {image && (
                     <div className="pointer-events-none absolute right-0 top-0 h-full w-[140px] sm:w-[200px]">
-                        <Image
-                            src={image}
-                            alt=""
-                            fill
-                            className="object-cover"
-                            sizes="200px"
-                        />
-                        {/* hide left edge under soft radius */}
+                        <Image src={image} alt="" fill className="object-cover" sizes="200px" />
                         <div className="absolute left-0 top-0 h-full w-4 bg-[#FFF3EB]" />
                     </div>
                 )}
@@ -40,17 +40,25 @@ export default function CategoryHeader({
 
             {/* category chips */}
             <div className="mt-3 flex flex-wrap gap-2">
-                {categories.map((c, i) => (
-                    <button
-                        key={`${c}-${i}`}
-                        className={clsx(
-                            "inline-flex items-center rounded-full border px-3 py-1 text-sm",
-                            "bg-white border-neutral-200 text-neutral-800 hover:bg-neutral-50"
-                        )}
-                    >
-                        {c}
-                    </button>
-                ))}
+                {categories.map((name) => {
+                    const active = name === activeName;
+                    return (
+                        <button
+                            key={name}
+                            type="button"
+                            onClick={() => onSelect?.(name)}
+                            className={clsx(
+                                "inline-flex items-center rounded-full border px-3 py-1 text-sm transition-colors",
+                                active
+                                    ? "bg-neutral-900 text-white border-neutral-900"
+                                    : "bg-white text-neutral-800 border-neutral-200 hover:bg-neutral-50"
+                            )}
+                            aria-pressed={active}
+                        >
+                            {name}
+                        </button>
+                    );
+                })}
             </div>
         </section>
     );

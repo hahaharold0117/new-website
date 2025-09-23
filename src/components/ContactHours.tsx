@@ -65,8 +65,7 @@ export default function ContactHours() {
           </div>
         </div>
 
-        {/* Working hours card */}
-        <div className=" bg-[#FFF3EB] overflow-hidden">
+        <div className="bg-[#FFF3EB] overflow-hidden">
           <div className="p-6">
             <h4 className="font-bold mb-4">Working Hours</h4>
 
@@ -79,7 +78,7 @@ export default function ContactHours() {
 
             <div className="mt-6 flex justify-center">
               <Link
-                href="#reservation"
+                href="/reservation"
                 className="inline-flex items-center justify-center border border-neutral-200 bg-white px-10 py-2 text-sm font-semibold hover:bg-neutral-50"
               >
                 Book A Table

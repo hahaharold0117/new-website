@@ -12,7 +12,7 @@ export default function ProductCard({
     img: string;
 }) {
     return (
-        <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
+        <div className="h-36 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
             <div className="flex gap-4">
                 <div className="flex-1">
                     <h5 className="font-semibold leading-tight">{title}</h5>

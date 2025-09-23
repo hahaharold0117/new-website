@@ -1,61 +1,111 @@
 "use client";
 
+import { useMemo, useState } from "react";
+import Container from "@/components/Container";
 import BucketPanel from "@/components/menu/BucketPanel";
 import CategoryHeader from "@/components/menu/CategoryHeader";
 import ProductCard from "@/components/menu/ProductCard";
-import Container from "@/components/Container";
+import { useRestaurant } from "@/contexts/restaurant-context";
 
-const categories = [
-  "Soup",
-  "Pizzas",
-  "Kebabs",
-  "Mezes",
-  "Drinks",
-  "Desserts",
-  "Desserts",
-  "Desserts",
-  "Desserts",
-];
+type ProductCardData = {
+  id: number | string;
+  title: string;
+  price: number | string;
+  desc?: string;
+  img?: string;
+};
 
-const products = new Array(8).fill(0).map((_, i) => ({
-  id: i + 1,
-  title: "Turkish Lentil Soup",
-  price: 5.99,
-  desc:
-    "Traditional Turkish red lentil soup with aromatic herbs and spices. Served with fresh bread.",
-  img: "/images/default-menu-item.png",
-}));
+function toProductCard(item: any): ProductCardData {
+  return {
+    id: item?.id ?? item?.Id ?? item?.ItemId ?? crypto.randomUUID(),
+    title: item?.Name ?? item?.name ?? "Untitled",
+    price: item?.Price ?? item?.price ?? item?.UnitPrice ?? item?.unitPrice ?? 0,
+    desc: item?.Description ?? item?.description ?? item?.ShortDesc ?? "",
+    img: item?.ImageUrl ?? item?.imageUrl ?? item?.ImageURL ?? "/images/default-menu-item.png",
+  };
+}
 
 export default function MenuPage() {
+  const { restaurant, menu: mainData } = useRestaurant();
+
+  // Normalize menu from context ({ restaurant, menu } or { restaurant, mainData.menu })
+  const menu = (mainData?.menu ?? mainData ?? []).length
+    ? mainData.menu ?? mainData
+    : restaurant?.menu ?? [];
+
+  const categories = useMemo(
+    () =>
+      (menu ?? [])
+        .filter(Boolean)
+        .map((c: any) => ({
+          id: c?.id ?? c?.Id,
+          name: c?.Name ?? c?.name ?? "Unnamed",
+          image: c?.ImageUrl ?? c?.imageUrl ?? c?.ImageURL ?? "/images/default-menu-category.png",
+          description: c?.Remarks ?? c?.description ?? "",
+          items: Array.isArray(c?.items) ? c.items : [],
+        })),
+    [menu]
+  );
+
+  const [activeCatId, setActiveCatId] = useState(categories[0]?.id ?? null);
+
+  const activeCategory = useMemo(
+    () => categories.find((c) => c.id === activeCatId) ?? categories[0],
+    [categories, activeCatId]
+  );
+
+  const products: ProductCardData[] = useMemo(
+    () => (activeCategory?.items ?? []).map(toProductCard),
+    [activeCategory]
+  );
+
+  if (!categories.length) {
+    return (
+      <Container>
+        <main className="py-10">
+          <div className="text-center text-sm text-neutral-500">No menu data available.</div>
+        </main>
+      </Container>
+    );
+  }
+
   return (
     <Container>
       <main className="py-6">
-        <div className="container mx-auto">
-          <CategoryHeader
-            title="Soups"
-            description="Delicious and hearty soups."
-            image="/images/default-menu-category.png"
-            categories={categories}
-          />
-          {/* Content grid */}
-          <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
-            {/* Left: products */}
-            <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+          <section>
+            <CategoryHeader
+              title={activeCategory?.name}
+              description={activeCategory?.description || "Explore our menu."}
+              image={activeCategory?.image}
+              categories={categories.map((c) => c.name)}
+              activeName={activeCategory?.name}
+              onSelect={(name) =>
+                setActiveCatId(categories.find((c) => c.name === name)?.id ?? activeCatId)
+              }
+            />
+
+            {/* Products grid */}
+            <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 auto-rows-fr">
               {products.map((p) => (
-                <ProductCard key={p.id} {...p} />
+                <div key={p.id} className="h-full">
+                  <ProductCard
+                    title={p.title}
+                    price={Number(p.price) || 0}
+                    desc={p.desc ?? ""}
+                    img={p.img ?? "/images/default-menu-item.png"}
+                  />
+                </div>
               ))}
             </div>
+          </section>
 
-            {/* Right: basket (sticky) */}
-            <aside className="lg:pl-2">
-              <div className="lg:sticky lg:top-4">
-                <BucketPanel />
-              </div>
-            </aside>
+          {/* RIGHT COLUMN — BASKET */}
+          <div className="max-h-[calc(100vh-10rem)] overflow-y-auto ">
+            <BucketPanel />
           </div>
         </div>
       </main>
     </Container>
-
   );
 }

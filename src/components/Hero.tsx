@@ -20,7 +20,7 @@ export default function Hero() {
             </p>
             <div className="mt-6 flex items-center justify-center gap-4">
               <Link
-                href="/order-online"
+                href="/menu"
                 className="inline-flex items-center rounded-md bg-brand px-4 py-2 text-white font-semibold shadow-soft hover:opacity-90"
               >
                 Order Online

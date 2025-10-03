@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
 import {
@@ -7,11 +7,8 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import { MainContextProvider } from "./contexts/main-context.tsx";
-import { Provider, useDispatch, useSelector } from "react-redux";
-import { RootState, store } from "./store.ts";
+import { Provider, useSelector } from "react-redux";
 import { useAxios } from "@/lib/axios";
-import { setAuth } from "@/store";
-// Introjs components
 
 import Header from "./components/Header";
 import Hero from './components/Hero.tsx'
@@ -26,8 +23,9 @@ import Menu from './menu.tsx'
 import Gallery from './gallery.tsx'
 import Reservation from './reservation.tsx'
 
-import { useReadMainSettingDataQuery } from "./api.ts";
 import { normalizeDomain } from './lib/utils.ts'
+import { configureStore } from "./store/index";
+import {getMainSettingData} from './helpers/backend_helper.ts'
 
 const links = [
   { to: "/", label: "Home", id: "homeNav" },
@@ -37,12 +35,9 @@ const links = [
 ];
 
 export function Root() {
-  const api = useAxios();
-  const auth = useSelector((state: RootState) => state.auth);
-
   return (
     <>
-      <Header links={links} region={auth?.region} />
+      <Header links={links} />
       <Outlet />
     </>
   );
@@ -110,21 +105,48 @@ const router = createBrowserRouter([
 ]);
 
 function AppProviders() {
-  const [mainSettingData, setMainSettingData] = useState(null);
+  const [mainSettingData, setMainSettingData] = useState<any | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const domain = normalizeDomain(
-    typeof window !== "undefined" ? window.location.host : ""
+  const domain = useMemo(
+    () => (typeof window !== "undefined" ? normalizeDomain(window.location.host) : "localhost"),
+    []
   );
 
-  const { data } = useReadMainSettingDataQuery({ domain }, { skip: !domain });
-
   useEffect(() => {
-    if (data?.success) {
-      setMainSettingData(data.result);
-    }
-  }, [data]);
+    let alive = true;
+    (async () => {
+      try {
+        const res = await getMainSettingData(domain);
+        if (!alive) return;
 
-  const ctxValue = mainSettingData ?? { restaurant: {}, menu: [] };
+        if (res?.success) {
+          setMainSettingData(res.result as any);
+        } else {
+          setError(res?.message || "Failed to load settings.");
+          setMainSettingData({ restaurant: {}, menu: [] });
+        }
+      } catch (e: any) {
+        if (!alive) return;
+        setError(e?.message || "Network error.");
+        setMainSettingData({ restaurant: {}, menu: [] });
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [domain]);
+
+  const ctxValue: any = mainSettingData ?? { restaurant: {}, menu: [] };
+  
+  if (!mainSettingData && !error) {
+    return (
+      <div className="grid min-h-screen place-items-center text-neutral-500">
+        Loading…
+      </div>
+    );
+  }
 
   return (
     <MainContextProvider value={ctxValue}>
@@ -134,7 +156,7 @@ function AppProviders() {
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <Provider store={store}>
+  <Provider store={configureStore({})}>
     <AppProviders />
   </Provider>
 );

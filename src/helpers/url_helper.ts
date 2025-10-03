@@ -1,0 +1,1 @@
+export const GET_MAIN_SETTING = '/public/main-data'

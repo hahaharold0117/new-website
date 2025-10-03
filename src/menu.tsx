@@ -8,16 +8,19 @@ import { useMain } from "@/contexts/main-context";
 export default function MenuPage() {
   const { menu } = useMain();
   // Use only the provided fields: Name, Collection_Price, Remarks
+  console.log('menu =>', menu)
+
   const categories = useMemo(
     () =>
       (menu ?? [])
         .filter(Boolean)
         .map((c: any) => ({
-          id: c?.id ?? c?.Id ?? c?.CategoryId ?? null, // keep whatever id exists, if any
+          id: c?.id ?? null, // keep whatever id exists, if any
           name: c?.Name ?? "Unnamed",
           description: c?.Remarks ?? "",
           items: Array.isArray(c?.items) ? c.items : [],
-          image: "/default-menu-category.png",
+          // image: "/default-menu-category.png",
+          image: c?.BackImage,
         })),
     [menu]
   );
@@ -63,14 +66,9 @@ export default function MenuPage() {
             />
 
             <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 auto-rows-fr">
-              {products.map((it: any, idx: number) => (
-                <div key={it?.id ?? it?.Id ?? it?.ItemId ?? idx} className="h-full">
-                  <ProductCard
-                    title={it?.Name ?? "Untitled"}
-                    price={Number(it?.Collection_Price ?? 0)}
-                    desc={it?.Remarks ?? ""}
-                    img={"/default-menu-item.png"}
-                  />
+              {products.map((item: any) => (
+                <div key={item?.id} className="h-full">
+                  <ProductCard item = {item} />
                 </div>
               ))}
             </div>

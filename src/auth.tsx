@@ -5,30 +5,11 @@ import {
 } from "react";
 import axios from "axios";
 import { API_URL } from "./lib/env";
-import { Organization } from "@/types";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
+import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, setAuth } from "./store";
-
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { AgreementPage } from "./components/agreement";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useAxios } from "@/lib/axios";
 
-const regionUrls: { [key: string]: string } = {
-  us: "https://app.us-west.chaparral.ai",
-  eu: "https://app.eu.chaparral.ai",
-  as: "https://app.as.chaparral.ai",
-};
 
 export function AuthContextProvider(props: PropsWithChildren) {
   const auth = useSelector((state: RootState) => state.auth);
@@ -117,80 +98,6 @@ export function AuthContextProvider(props: PropsWithChildren) {
 
   return (
     <>
-      <AlertDialog open={!auth.region}>
-        <AlertDialogContent style={{ border: "solid 1px #fff" }}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Please Select Your Region</AlertDialogTitle>
-            <AlertDialogDescription>
-              Your region information is missing. Please choose a region to proceed.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Select onValueChange={setSelectedRegion}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a region" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="us">Americas</SelectItem>
-              <SelectItem value="eu">Europe</SelectItem>
-              <SelectItem value="as">Asia</SelectItem>
-            </SelectContent>
-          </Select>
-          <AlertDialogFooter>
-            <AlertDialogAction disabled={!selectedRegion} onClick={updateRegion}>
-              Confirm Region
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={auth.region !== null && !auth.agreed}>
-        <AlertDialogContent style={{ border: "solid 1px #fff" }}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Chaparral Labs Terms & Conditions</AlertDialogTitle>
-            <AlertDialogDescription>
-              <AgreementPage />
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={agree}>I Accept</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog
-        open={
-          auth.region !== null &&
-          auth.agreed &&
-          (!auth.affiliation || auth.affiliation.trim() === "")
-        }
-      >
-        <AlertDialogContent style={{ border: "solid 1px #fff" }}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Affiliation Required</AlertDialogTitle>
-            <AlertDialogDescription>
-              Please provide your affiliation to continue using the platform.
-            </AlertDialogDescription>
-            <input
-              type="text"
-              placeholder="Enter your affiliation"
-              value={affiliationInput}
-              onChange={(e) => setAffiliationInput(e.target.value)}
-              style={{
-                marginTop: "10px",
-                padding: "8px",
-                borderRadius: "4px",
-                border: "1px solid #ccc",
-                width: "100%",
-              }}
-            />
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={handleAffiliationSubmit} disabled={!affiliationInput.trim()}>
-              Submit Affiliation
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
       {props.children}
     </>
   );
@@ -204,7 +111,6 @@ export interface Authentication {
     email: string;
     id: string;
   };
-  available_orgs: Organization[];
   agreed: boolean;
   tutorial: boolean;
   region: string;

@@ -5,15 +5,15 @@ import clsx from "clsx";
 import Container from "./Container";
 import { ThemeContext } from "../contexts/mode";
 
-export default function Header({ links, region }) {
+export default function Header({ links, region }: any) {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
   const { mode, setMode } = useContext(ThemeContext);
 
-  const isActive = (href) =>
+  const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
 
-  const linkCls = (href) =>
+  const linkCls = (href: string) =>
     clsx(
       "block py-2 text-sm md:text-[15px] transition-colors",
       isActive(href) ? "text-[#FF7A1A] font-semibold" : "text-neutral-800 hover:text-[#FF7A1A]"
@@ -30,7 +30,7 @@ export default function Header({ links, region }) {
               open ? "block" : "hidden md:block"
             )}
           >
-            {links.map((l) => (
+            {links.map((l: any) => (
               <Link
                 key={l.to}
                 id={l.id}
@@ -93,7 +93,7 @@ export default function Header({ links, region }) {
             "md:hidden flex flex-col items-start space-y-2 p-4"
           )}
         >
-          {links.map((l) => (
+          {links.map((l: any) => (
             <Link
               key={l.to}
               id={l.id}

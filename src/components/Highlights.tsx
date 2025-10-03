@@ -1,6 +1,3 @@
-// src/components/Highlights.tsx
-"use client";
-
 import { useCallback, useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
@@ -16,14 +13,14 @@ type Item = {
 };
 
 const items: Item[] = [
-  { id: "ck-flatbread", title: "Chicken Kebab Flatbread", desc: "Juicy chicken, fresh vegetables, and our signature sauce wrapped in...", price: "£8.99", img: "/images/dish-1.png" },
-  { id: "mqb-a", title: "Mediterranean Quinoa Bowl", desc: "Healthy grains, fresh vegetables, and our signature sauce wrapped in...", price: "£8.99", img: "/images/dish-2.png" },
-  { id: "mqb-b-1", title: "Mediterranean Quinoa Bowl", desc: "Juicy chicken, fresh vegetables, and our signature sauce wrapped in...", price: "£8.99", img: "/images/dish-3.png" },
-  { id: "mqb-c-1", title: "Mediterranean Quinoa Bowl", desc: "Juicy chicken, fresh vegetables, and our signature sauce wrapped in...", price: "£8.99", img: "/images/dish-3.png" },
-  { id: "mqb-b-2", title: "Mediterranean Quinoa Bowl", desc: "Juicy chicken, fresh vegetables, and our signature sauce wrapped in...", price: "£8.99", img: "/images/dish-3.png" },
-  { id: "mqb-c-2", title: "Mediterranean Quinoa Bowl", desc: "Juicy chicken, fresh vegetables, and our signature sauce wrapped in...", price: "£8.99", img: "/images/dish-3.png" },
-  { id: "mqb-b-3", title: "Mediterranean Quinoa Bowl", desc: "Juicy chicken, fresh vegetables, and our signature sauce wrapped in...", price: "£8.99", img: "/images/dish-3.png" },
-  { id: "mqb-c-3", title: "Mediterranean Quinoa Bowl", desc: "Juicy chicken, fresh vegetables, and our signature sauce wrapped in...", price: "£8.99", img: "/images/dish-3.png" },
+  { id: "ck-flatbread", title: "Chicken Kebab Flatbread", desc: "Juicy chicken, fresh vegetables, and our signature sauce wrapped in...", price: "£8.99", img: "/dish-1.png" },
+  { id: "mqb-a", title: "Mediterranean Quinoa Bowl", desc: "Healthy grains, fresh vegetables, and our signature sauce wrapped in...", price: "£8.99", img: "/dish-2.png" },
+  { id: "mqb-b-1", title: "Mediterranean Quinoa Bowl", desc: "Juicy chicken, fresh vegetables, and our signature sauce wrapped in...", price: "£8.99", img: "/dish-3.png" },
+  { id: "mqb-c-1", title: "Mediterranean Quinoa Bowl", desc: "Juicy chicken, fresh vegetables, and our signature sauce wrapped in...", price: "£8.99", img: "/dish-3.png" },
+  { id: "mqb-b-2", title: "Mediterranean Quinoa Bowl", desc: "Juicy chicken, fresh vegetables, and our signature sauce wrapped in...", price: "£8.99", img: "/dish-3.png" },
+  { id: "mqb-c-2", title: "Mediterranean Quinoa Bowl", desc: "Juicy chicken, fresh vegetables, and our signature sauce wrapped in...", price: "£8.99", img: "/dish-3.png" },
+  { id: "mqb-b-3", title: "Mediterranean Quinoa Bowl", desc: "Juicy chicken, fresh vegetables, and our signature sauce wrapped in...", price: "£8.99", img: "/dish-3.png" },
+  { id: "mqb-c-3", title: "Mediterranean Quinoa Bowl", desc: "Juicy chicken, fresh vegetables, and our signature sauce wrapped in...", price: "£8.99", img: "/dish-3.png" },
 ];
 
 export default function Highlights() {
@@ -96,12 +93,9 @@ export default function Highlights() {
         </div>
       </div>
 
-      {/* Embla viewport */}
       <div className="overflow-hidden" ref={emblaRef}>
-        {/* Embla container */}
         <div className="flex gap-6">
           {items.map(({ id, ...props }) => (
-            // Embla slide
             <div
               key={id}
               className="

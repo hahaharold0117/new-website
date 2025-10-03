@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo, useState } from "react";
 import Container from "@/components/Container";
 import BucketPanel from "@/components/menu/BucketPanel";
@@ -9,8 +7,6 @@ import { useMain } from "@/contexts/main-context";
 
 export default function MenuPage() {
   const { menu } = useMain();
-  console.log("menu =>", menu);
-
   // Use only the provided fields: Name, Collection_Price, Remarks
   const categories = useMemo(
     () =>
@@ -66,7 +62,6 @@ export default function MenuPage() {
               }
             />
 
-            {/* Products grid: read Name, Collection_Price, Remarks directly */}
             <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 auto-rows-fr">
               {products.map((it: any, idx: number) => (
                 <div key={it?.id ?? it?.Id ?? it?.ItemId ?? idx} className="h-full">
@@ -81,7 +76,6 @@ export default function MenuPage() {
             </div>
           </section>
 
-          {/* RIGHT COLUMN — BASKET */}
           <div className="max-h-[calc(100vh-10rem)] overflow-y-auto">
             <BucketPanel />
           </div>

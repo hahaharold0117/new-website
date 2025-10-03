@@ -1,23 +1,19 @@
 import { Phone, MapPin, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useMain } from "@/contexts/main-context";
+import { Restaurant } from "../types";
 
-// Google Maps embed with lat/lng or address
 function MapEmbed({
-  lat,
-  lng,
   address,
-  zoom = 15,
+  zoom = 16,
   className = "",
 }: {
-  lat?: number;
-  lng?: number;
-  address?: string;
+  address: string;
   zoom?: number;
   className?: string;
 }) {
-  const hasCoords = typeof lat === "number" && typeof lng === "number";
-  const q = hasCoords ? `${lat},${lng}` : encodeURIComponent(address ?? "Wolverhampton WV1 4LP");
-  const src = `https://maps.google.com/maps?q=${q}&z=${zoom}&output=embed`;
+  const q = encodeURIComponent(address);
+  const src = `https://maps.google.com/maps?q=${q}&z=${zoom}&output=embed&hl=en`;
 
   return (
     <iframe
@@ -31,10 +27,13 @@ function MapEmbed({
 }
 
 export default function ContactHours() {
-  // Replace with your actual coordinates or address
-  const lat = 52.5847;
-  const lng = -2.1290;
-  const address = "Herlan House, Field Street, Wolverhampton WV1 4LP";
+  const { restaurant } = useMain() as { restaurant: Restaurant };
+
+  // Build address from restaurant fields
+  const street = restaurant?.Street?.trim();
+  const city = restaurant?.City?.trim();
+  const postcode = restaurant?.PostCode?.trim();
+  const address = [street, city, postcode].filter(Boolean).join(", ");
 
   return (
     <section className="bg-[#FFF8F5]">
@@ -45,18 +44,18 @@ export default function ContactHours() {
             <h4 className="font-bold mb-4">Contacts</h4>
 
             <div className="space-y-4 text-sm">
-              <div className="flex items-start gap-3">
+              <div className="flex items-center gap-3">
                 <span className="inline-grid h-8 w-8 place-items-center rounded-lg bg-[#FF7A1A]/10 text-[#FF7A1A]">
                   <Phone className="h-4 w-4" />
                 </span>
-                <p className="font-semibold">+44048384343</p>
+                <p className="font-semibold">{restaurant?.Tel1 ?? ""}</p>
               </div>
 
-              <div className="flex items-start gap-3">
+              <div className="flex items-center gap-3">
                 <span className="inline-grid h-8 w-8 place-items-center rounded-lg bg-[#FF7A1A]/10 text-[#FF7A1A]">
                   <MapPin className="h-4 w-4" />
                 </span>
-                <p>{address}</p>
+                <p>{address || "Address unavailable"}</p>
               </div>
             </div>
           </div>
@@ -67,7 +66,7 @@ export default function ContactHours() {
           <div className="p-6">
             <h4 className="font-bold mb-4">Working Hours</h4>
 
-            <div className="flex items-start gap-3">
+            <div className="flex items-center gap-3">
               <span className="inline-grid h-8 w-8 place-items-center rounded-lg bg-[#FF7A1A]/10 text-[#FF7A1A]">
                 <Clock className="h-4 w-4" />
               </span>
@@ -87,12 +86,13 @@ export default function ContactHours() {
 
         {/* Map card */}
         <div className="bg-[#FFF3EB] overflow-hidden">
-          <MapEmbed
-            lat={lat}
-            lng={lng}
-            address={address}
-            className="h-[220px] w-full md:h-full"
-          />
+          {address ? (
+            <MapEmbed address={address} className="h-[220px] w-full md:h-full" />
+          ) : (
+            <div className="h-[220px] w-full md:h-full bg-neutral-100 grid place-items-center text-neutral-500 text-sm">
+              Map not available
+            </div>
+          )}
         </div>
       </div>
     </section>

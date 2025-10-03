@@ -1,4 +1,6 @@
+import { useMemo } from 'react'
 import clsx from "clsx";
+import { getMenuImageUrl } from '../../lib/utils'
 
 type Props = {
   title: string;
@@ -17,6 +19,12 @@ export default function CategoryHeader({
   activeName,
   onSelect,
 }: Props) {
+
+  const maybe = image != null ? getMenuImageUrl(image) : "";
+  const imgSrc = typeof maybe === "string" && maybe.trim()
+    ? maybe
+    : "/default-menu-category.png";
+
   return (
     <section>
       <div className="relative overflow-hidden rounded-2xl bg-[#FFF3EB]">
@@ -25,20 +33,18 @@ export default function CategoryHeader({
           {description && <p className="text-sm text-neutral-700">{description}</p>}
         </div>
 
-        {image && (
-          <div className="pointer-events-none absolute right-0 top-0 h-full w-[140px] sm:w-[200px]">
-            <img
-              src={image}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-              loading="lazy"
-            />
-            <div className="absolute left-0 top-0 h-full w-4 bg-[#FFF3EB]" />
-          </div>
-        )}
+        <div className="pointer-events-none absolute right-0 top-0 h-full w-[140px] sm:w-[200px]">
+          <img
+            src={imgSrc}
+            alt=""
+            role="presentation"
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute left-0 top-0 h-full w-4 bg-[#FFF3EB]" />
+        </div>
       </div>
 
-      {/* category chips */}
       <div className="mt-3 flex flex-wrap gap-2">
         {categories.map((name) => {
           const active = name === activeName;

@@ -27,7 +27,7 @@ export default function FeatureBullets() {
           className="rounded-2xl bg-white p-5 border border-neutral-200"
         >
           <div className="flex items-start gap-4">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand/10 text-brand">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#FF7A1A]/20 text-[#FF7A1A]">
               <Icon />
             </div>
             <div>

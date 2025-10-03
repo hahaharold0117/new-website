@@ -1,12 +1,10 @@
+import { Link } from "react-router-dom";
 import Container from "./Container";
-import Image from "next/image";
-import Link from "next/link";
 
 export default function Hero() {
   return (
     <section className="relative overflow-hidden bg-[#FFDECE]">
-      <div className="absolute inset-0 -z-10 opacity-10">
-      </div>
+      <div className="absolute inset-0 -z-10 opacity-10" />
       <Container>
         <div className="grid gap-8 py-12 md:py-16">
           <div className="text-center max-w-3xl mx-auto">
@@ -20,30 +18,28 @@ export default function Hero() {
             </p>
             <div className="mt-6 flex items-center justify-center gap-4">
               <Link
-                href="/order-online"
-                className="inline-flex items-center rounded-md bg-brand px-4 py-2 text-white font-semibold shadow-soft hover:opacity-90"
+                to="/menu"
+                className="inline-flex items-center rounded-md bg-[#FF7A1A] px-4 py-2 text-white font-semibold shadow-soft hover:opacity-90"
               >
                 Order Online
               </Link>
             </div>
           </div>
 
-          {/* Hero feature tiles (like your “Tasty / New Taste” row) */}
+          {/* Hero feature tiles */}
           <div className="grid md:grid-cols-2 gap-6">
+            {/* Left tile */}
             <div className="relative overflow-hidden rounded-2xl shadow-soft">
-              <Image
-                src="/images/promo-left.png"
+              <img
+                src="/promo-left.png"
                 alt="Tasty as ever"
-                width={1280}
-                height={720}
                 className="h-56 w-full object-cover md:h-64"
-                priority
+                loading="eager"
               />
-
-              {/* Dark overlay for contrast */}
+              {/* Dark overlay */}
               <div className="absolute inset-0 bg-black/55" />
 
-              {/* Content layer */}
+              {/* Content */}
               <div className="absolute inset-0 p-6 md:p-8 flex flex-col text-white">
                 <h3 className="text-3xl font-black leading-tight drop-shadow">
                   TASTY.
@@ -51,9 +47,8 @@ export default function Hero() {
                   AS EVER.
                 </h3>
 
-                {/* CTA aligned to the right, near the bottom */}
                 <div className="mt-auto flex justify-end">
-                  <Link
+                  <a
                     href="#menu"
                     className="inline-flex items-center gap-2 rounded-md border border-white/30 bg-black/40 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm hover:bg-black/50"
                   >
@@ -70,23 +65,21 @@ export default function Hero() {
                     >
                       <path d="M5 12h14M13 5l7 7-7 7" />
                     </svg>
-                  </Link>
+                  </a>
                 </div>
               </div>
             </div>
 
-
+            {/* Right tile */}
             <div className="relative overflow-hidden rounded-2xl shadow-soft bg-white">
-              <Image
-                src="/images/promo-right.jpg"
+              <img
+                src="/promo-right.jpg"
                 alt="New taste unlocked"
-                width={1280}
-                height={720}
                 className="h-56 w-full object-cover md:h-64 mix-blend-multiply"
+                loading="lazy"
               />
-              <div className="absolute inset-0 bg-brand/20" />
+              <div className="absolute inset-0 bg-[#FF7A1A]/20" />
 
-              {/* Content */}
               <div className="absolute inset-0 p-6 md:p-8 flex flex-col text-white">
                 <h3 className="text-3xl font-black leading-tight">
                   NEW TASTE,
@@ -97,10 +90,9 @@ export default function Hero() {
                   Citrus Revani Cake
                 </span>
 
-                {/* Arrow button bottom-right */}
-                <Link
+                <a
                   href="#"
-                  className="absolute bottom-4 right-4 inline-flex h-10 w-10 items-center justify-center rounded-md bg-white text-brand shadow-md hover:bg-neutral-100"
+                  className="absolute bottom-4 right-4 inline-flex h-10 w-10 items-center justify-center rounded-md bg-white text-[#FF7A1A] shadow-md hover:bg-neutral-100 text-[#FF7A1A]"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -112,10 +104,9 @@ export default function Hero() {
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                   </svg>
-                </Link>
+                </a>
               </div>
             </div>
-
           </div>
         </div>
       </Container>

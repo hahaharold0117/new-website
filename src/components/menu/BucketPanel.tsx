@@ -13,7 +13,7 @@ export default function BucketPanel() {
           aria-checked={clickCollect}
           onClick={() => setClickCollect((v) => !v)}
           className={`h-5 w-9 rounded-full transition-colors ${
-            clickCollect ? "bg-[#FF7A1A]" : "bg-neutral-300"
+            clickCollect ? "bg-[var(--brand)]" : "bg-neutral-300"
           } relative`}
         >
           <span

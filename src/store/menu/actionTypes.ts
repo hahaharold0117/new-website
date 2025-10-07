@@ -1,0 +1,5 @@
+export enum MenuActionTypes {
+  SET_TOPLEVEL_LINKED_MENU = "SET_TOPLEVEL_LINKED_MENU",
+  SET_ALL_MENU_ITEM = 'SET_ALL_MENU_ITEM'
+  
+}

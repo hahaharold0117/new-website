@@ -1,25 +1,34 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Container from "@/components/Container";
 import BucketPanel from "@/components/menu/BucketPanel";
 import CategoryHeader from "@/components/menu/CategoryHeader";
 import ProductCard from "@/components/menu/ProductCard";
 import { useMain } from "@/contexts/main-context";
+import { useDispatch, useSelector } from 'react-redux';
+import { setToplevelLinkedMenu, setAllMenuItem } from '@/store/actions'
 
 export default function MenuPage() {
+  const dispatch = useDispatch()
   const { menu } = useMain();
-  // Use only the provided fields: Name, Collection_Price, Remarks
-  console.log('menu =>', menu)
+  const allMenuItems: any[] = [];
+  (menu || []).forEach(cat => {
+    (cat.items || []).forEach(it => {
+      allMenuItems.push(it);
+    });
+  });
+
+  dispatch(setAllMenuItem(allMenuItems))
 
   const categories = useMemo(
     () =>
       (menu ?? [])
         .filter(Boolean)
+        .filter((c: any) => Number(c?.CategoryType ?? c?.categoryType) === 0)
         .map((c: any) => ({
-          id: c?.id ?? null, // keep whatever id exists, if any
+          id: c?.id ?? null,
           name: c?.Name ?? "Unnamed",
           description: c?.Remarks ?? "",
           items: Array.isArray(c?.items) ? c.items : [],
-          // image: "/default-menu-category.png",
           image: c?.BackImage,
         })),
     [menu]
@@ -49,6 +58,39 @@ export default function MenuPage() {
     );
   }
 
+  useEffect(() => {
+    let topLevelLinkedCategoryIds: any = []
+    let topLevelLinkedData: any = []
+    const menuCategory = menu.find(cateogry => cateogry.id === activeCatId)
+    if (menuCategory.LinkedCategoryId) {
+      if (menuCategory.LinkedCategoryId.includes(",")) {
+        topLevelLinkedCategoryIds = menuCategory.LinkedCategoryId.split(",");
+      } else {
+        topLevelLinkedCategoryIds = [menuCategory.LinkedCategoryId];
+      }
+
+      for (let topLevelLinkedCategoryId of topLevelLinkedCategoryIds) {
+        let topLevelLinkedMenuItems = [];
+        const topLevelLinkedCategory = menu.find((category) => category.id === Number(topLevelLinkedCategoryId))
+        if (allMenuItems.length) {
+          allMenuItems.map((menuItem, index) => {
+            if (menuItem.Category_Id === Number(topLevelLinkedCategoryId)) {
+              topLevelLinkedMenuItems.push(menuItem)
+            }
+          })
+        }
+        const topLevelLinkedObject = {
+          topLevelLinkedCategory: topLevelLinkedCategory,
+          topLevelLinkedMenuItems: topLevelLinkedMenuItems
+        }
+        topLevelLinkedData.push(topLevelLinkedObject)
+      }
+    }
+    dispatch(setToplevelLinkedMenu(topLevelLinkedData))
+
+  }, [activeCatId])
+
+
   return (
     <Container>
       <main className="py-6">
@@ -68,7 +110,7 @@ export default function MenuPage() {
             <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 auto-rows-fr">
               {products.map((item: any) => (
                 <div key={item?.id} className="h-full">
-                  <ProductCard item = {item} />
+                  <ProductCard item={item} />
                 </div>
               ))}
             </div>

@@ -6,18 +6,27 @@ import SubMenuModal from './SubMenuModal'
 import MenuModal from './MenuModal'
 
 export default function ProductCard({ item }: any) {
+  console.log('item =>', item)
   const { menu } = useMain();
   const [menuItem, setMenuItem] = useState(null)
   const [subMenuData, setSubMenuData] = useState([])
   const [showSubMenuModal, setShowSubMenuModal] = useState(false)
   const [showMenuModal, setShowMenuModal] = useState(false)
   const [linkedMenuData, setLinkedMenuData] = useState([])
-  const { toplevel_linke_menu, menu_items } = useSelector((state: any) => state.menu);
+  const { toplevel_linke_menu, menu_items, order_type } = useSelector((state: any) => state.menu);
 
   const isDisabled = !Boolean(item?.Active);
-  const displayPrice = Number.isFinite(item?.Collection_Price)
-    ? Number(item?.Collection_Price)
-    : Number(item?.Collection_Price) || 0;
+
+  const rawPrice =
+    order_type === "delivery"
+      ? (item?.Delivery_Price ?? item?.Collection_Price) // fallback to collection if delivery missing
+      : (item?.Collection_Price ?? item?.Delivery_Price); // fallback to delivery if collection missing
+
+  // parse safely to a number
+  const displayPrice = (() => {
+    const n = Number(rawPrice);
+    return Number.isFinite(n) ? n : 0;
+  })();
 
   const maybe = item?.BackImage != null ? getMenuImageUrl(item?.BackImage) : "";
   const imgSrc = typeof maybe === "string" && maybe.trim() ? maybe : "/default-menu-category.png";
@@ -164,24 +173,25 @@ export default function ProductCard({ item }: any) {
         </div>
       </div>
       <MenuModal
-        menuItem = {menuItem}
+        menuItem={menuItem}
         linkedMenu={linkedMenuData}
         show={showMenuModal}
         onClose={() => setShowMenuModal(false)}
-        // onSelect={(opt) => {
-        //   // handle size choice (e.g., set state, then open MenuModal)
-        //   // console.log("Selected size:", opt);
-        // }}
+        orderType = {order_type}
+      // onSelect={(opt) => {
+      //   // handle size choice (e.g., set state, then open MenuModal)
+      //   // console.log("Selected size:", opt);
+      // }}
       />
 
       <SubMenuModal
         menuData={subMenuData}
         show={showSubMenuModal}
         onClose={() => setShowSubMenuModal(false)}
-        // onSelect={(opt) => {
-        //   // handle size choice (e.g., set state, then open MenuModal)
-        //   // console.log("Selected size:", opt);
-        // }}
+      // onSelect={(opt) => {
+      //   // handle size choice (e.g., set state, then open MenuModal)
+      //   // console.log("Selected size:", opt);
+      // }}
       />
 
     </div>

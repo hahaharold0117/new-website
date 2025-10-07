@@ -1,28 +1,46 @@
-import { useState } from "react";
+import React from "react";
 
-export default function BucketPanel() {
-  const [clickCollect, setClickCollect] = useState(false);
+type OrderType = "pickup" | "delivery";
+type Props = {
+  orderType: OrderType | null;               // comes from MenuPage
+  onChange: (v: OrderType) => void;          // tell MenuPage about changes
+};
 
+export default function BucketPanel({ orderType, onChange }: Props) {
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
-      {/* toggle */}
+      {/* segmented switch: Pickup | Delivery */}
       <div className="mb-4 flex items-center gap-2">
-        <button
-          type="button"
-          role="switch"
-          aria-checked={clickCollect}
-          onClick={() => setClickCollect((v) => !v)}
-          className={`h-5 w-9 rounded-full transition-colors ${
-            clickCollect ? "bg-[var(--brand)]" : "bg-neutral-300"
-          } relative`}
+        <div
+          role="tablist"
+          aria-label="Order type"
+          className="inline-flex overflow-hidden rounded-full border border-neutral-300"
         >
-          <span
-            className={`absolute left-0.5 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white transition-transform ${
-              clickCollect ? "translate-x-4" : ""
+          <button
+            role="tab"
+            aria-selected={orderType === "pickup"}
+            onClick={() => onChange("pickup")}
+            className={`px-4 py-1.5 text-sm font-medium transition ${
+              orderType === "pickup"
+                ? "bg-[var(--brand)] text-white"
+                : "bg-white text-neutral-700 hover:bg-neutral-50"
             }`}
-          />
-        </button>
-        <span className="text-sm">Click&Collect</span>
+          >
+            Pickup
+          </button>
+          <button
+            role="tab"
+            aria-selected={orderType === "delivery"}
+            onClick={() => onChange("delivery")}
+            className={`px-4 py-1.5 text-sm font-medium border-l border-neutral-300 transition ${
+              orderType === "delivery"
+                ? "bg-[var(--brand)] text-white"
+                : "bg-white text-neutral-700 hover:bg-neutral-50"
+            }`}
+          >
+            Delivery
+          </button>
+        </div>
       </div>
 
       {/* empty state */}

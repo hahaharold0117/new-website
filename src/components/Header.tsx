@@ -16,7 +16,7 @@ export default function Header({ links, region }: any) {
   const linkCls = (href: string) =>
     clsx(
       "block py-2 text-sm md:text-[15px] transition-colors",
-      isActive(href) ? "text-[#FF7A1A] font-semibold" : "text-neutral-800 hover:text-[#FF7A1A]"
+      isActive(href) ? "text-[var(--brand)] font-semibold" : "text-neutral-800 hover:text-[var(--brand)]"
     );
 
   return (
@@ -59,7 +59,7 @@ export default function Header({ links, region }: any) {
 
             <Link
               to="/menu"
-              className="inline-flex items-center rounded-md bg-[#FF7A1A] px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
+              className="inline-flex items-center rounded-md bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
             >
               Order Online
             </Link>
@@ -100,7 +100,7 @@ export default function Header({ links, region }: any) {
               to={l.to}
               className={clsx(
                 "py-1 text-[15px]",
-                isActive(l.to) ? "text-[#FF7A1A] font-semibold" : "text-neutral-800"
+                isActive(l.to) ? "text-[var(--brand)] font-semibold" : "text-neutral-800"
               )}
               onClick={() => setOpen(false)}
             >

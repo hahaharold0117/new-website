@@ -19,7 +19,7 @@ export default function Hero() {
             <div className="mt-6 flex items-center justify-center gap-4">
               <Link
                 to="/menu"
-                className="inline-flex items-center rounded-md bg-[#FF7A1A] px-4 py-2 text-white font-semibold shadow-soft hover:opacity-90"
+                className="inline-flex items-center rounded-md bg-[var(--brand)] px-4 py-2 text-white font-semibold shadow-soft hover:opacity-90"
               >
                 Order Online
               </Link>
@@ -78,7 +78,7 @@ export default function Hero() {
                 className="h-56 w-full object-cover md:h-64 mix-blend-multiply"
                 loading="lazy"
               />
-              <div className="absolute inset-0 bg-[#FF7A1A]/20" />
+              <div className="absolute inset-0 bg-[var(--brand)]/20" />
 
               <div className="absolute inset-0 p-6 md:p-8 flex flex-col text-white">
                 <h3 className="text-3xl font-black leading-tight">
@@ -92,7 +92,7 @@ export default function Hero() {
 
                 <a
                   href="#"
-                  className="absolute bottom-4 right-4 inline-flex h-10 w-10 items-center justify-center rounded-md bg-white text-[#FF7A1A] shadow-md hover:bg-neutral-100 text-[#FF7A1A]"
+                  className="absolute bottom-4 right-4 inline-flex h-10 w-10 items-center justify-center rounded-md bg-white text-[var(--brand)] shadow-md hover:bg-neutral-100 text-[var(--brand)]"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

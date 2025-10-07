@@ -45,14 +45,14 @@ export default function ContactHours() {
 
             <div className="space-y-4 text-sm">
               <div className="flex items-center gap-3">
-                <span className="inline-grid h-8 w-8 place-items-center rounded-lg bg-[#FF7A1A]/10 text-[#FF7A1A]">
+                <span className="inline-grid h-8 w-8 place-items-center rounded-lg bg-[var(--brand)]/10 text-[var(--brand)]">
                   <Phone className="h-4 w-4" />
                 </span>
                 <p className="font-semibold">{restaurant?.Tel1 ?? ""}</p>
               </div>
 
               <div className="flex items-center gap-3">
-                <span className="inline-grid h-8 w-8 place-items-center rounded-lg bg-[#FF7A1A]/10 text-[#FF7A1A]">
+                <span className="inline-grid h-8 w-8 place-items-center rounded-lg bg-[var(--brand)]/10 text-[var(--brand)]">
                   <MapPin className="h-4 w-4" />
                 </span>
                 <p>{address || "Address unavailable"}</p>
@@ -67,7 +67,7 @@ export default function ContactHours() {
             <h4 className="font-bold mb-4">Working Hours</h4>
 
             <div className="flex items-center gap-3">
-              <span className="inline-grid h-8 w-8 place-items-center rounded-lg bg-[#FF7A1A]/10 text-[#FF7A1A]">
+              <span className="inline-grid h-8 w-8 place-items-center rounded-lg bg-[var(--brand)]/10 text-[var(--brand)]">
                 <Clock className="h-4 w-4" />
               </span>
               <p className="text-sm">Open Every Day: 11:00 – 23:45</p>

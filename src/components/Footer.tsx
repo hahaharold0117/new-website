@@ -51,7 +51,7 @@ export default function Footer({
             {links.map((l, i) => (
               <React.Fragment key={l.label}>
                 {i > 0 && <span>•</span>}
-                <a href={l.href} className="hover:text-[#FF7A1A]">
+                <a href={l.href} className="hover:text-[var(--brand)]">
                   {l.label}
                 </a>
               </React.Fragment>

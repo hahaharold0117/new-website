@@ -26,11 +26,11 @@ export default function ProductCard({ title, desc, price, img }: Props) {
         <p className="mt-1 text-sm text-neutral-600 line-clamp-2">{desc}</p>
 
         <div className="mt-4 flex items-center justify-between">
-          <span className="text-[#FF7A1A] text-xl font-extrabold">{price}</span>
+          <span className="text-[var(--brand)] text-xl font-extrabold">{price}</span>
 
           <Link
             to="/order-online"
-            className="inline-flex items-center rounded-[12px] bg-[#FF7A1A] px-4 py-2 text-sm font-semibold text-white shadow-[0_6px_18px_rgba(249,115,22,0.35)] hover:brightness-95 active:translate-y-px"
+            className="inline-flex items-center rounded-[12px] bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white shadow-[0_6px_18px_rgba(249,115,22,0.35)] hover:brightness-95 active:translate-y-px"
           >
             Add Basket
           </Link>

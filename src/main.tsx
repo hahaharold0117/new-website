@@ -26,6 +26,7 @@ import Reservation from './reservation.tsx'
 import { normalizeDomain } from './lib/utils.ts'
 import { configureStore } from "./store/index";
 import {getMainSettingData} from './helpers/backend_helper.ts'
+import ThemeVars from "./ThemeVars.tsx";
 
 const links = [
   { to: "/", label: "Home", id: "homeNav" },
@@ -148,8 +149,12 @@ function AppProviders() {
     );
   }
 
+  // const brandColor = "#3f5f2f"
+  const brandColor = "#FF7A1A"
+
   return (
     <MainContextProvider value={ctxValue}>
+       <ThemeVars color={brandColor} />
       <RouterProvider router={router} />
     </MainContextProvider>
   );

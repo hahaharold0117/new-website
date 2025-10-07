@@ -14,9 +14,6 @@ export default function ProductCard({ item }: any) {
   const [linkedMenuData, setLinkedMenuData] = useState([])
   const { toplevel_linke_menu, menu_items } = useSelector((state: any) => state.menu);
 
-  console.log('showMenuModal =>', showMenuModal)
-  console.log('showSubMenuModal =>', showSubMenuModal)
-
   const isDisabled = !Boolean(item?.Active);
   const displayPrice = Number.isFinite(item?.Collection_Price)
     ? Number(item?.Collection_Price)
@@ -25,11 +22,8 @@ export default function ProductCard({ item }: any) {
   const maybe = item?.BackImage != null ? getMenuImageUrl(item?.BackImage) : "";
   const imgSrc = typeof maybe === "string" && maybe.trim() ? maybe : "/default-menu-category.png";
 
-  console.log('toplevel_linke_menu =>', toplevel_linke_menu)
-
   const processItem = async (item: any) => {
     try {
-      console.log('item =>', item)
       setMenuItem(item)
       let linked_category_data: any = null
       let linked_menu_data: any = null
@@ -110,8 +104,6 @@ export default function ProductCard({ item }: any) {
               }
             }
           }
-
-          console.log('linkedMenuData =>', linkedMenuData)
           setLinkedMenuData(linkedMenuData)
         }
 

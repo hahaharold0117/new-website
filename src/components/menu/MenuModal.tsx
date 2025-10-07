@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getMenuImageUrl } from "../../lib/utils";
+import { LS_KEY } from '../../lib/env'
+import {addBucketItem} from '@/store/actions'
 
 export default function MenuModal({
   menuItem = null,
@@ -335,15 +337,34 @@ export default function MenuModal({
             </button>
             <button
               onClick={() => {
-                onConfirm({
+                // onConfirm({
+                //   id: productId,
+                //   Name: productName,
+                //   quantity: qty,
+                //   totalPrice,
+                //   basketTopLevelLinkedMenuData: topLevelLinkedCategoryData,
+                //   basketLinkedMenuData: linkedMenuData,
+                // });
+                const payload = {
                   id: productId,
                   Name: productName,
                   quantity: qty,
                   totalPrice,
                   basketTopLevelLinkedMenuData: topLevelLinkedCategoryData,
                   basketLinkedMenuData: linkedMenuData,
-                });
-                onClose();
+                  // optional extras you may want later:
+                  addedAt: Date.now(),
+                  image: imgSrc,
+                };
+                dispatch(addBucketItem(payload));
+                try {
+                  const existing = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+                  const next = Array.isArray(existing) ? [...existing, payload] : [payload];
+                  localStorage.setItem(LS_KEY, JSON.stringify(next));
+                } catch {
+                  localStorage.setItem(LS_KEY, JSON.stringify([payload]));
+                }
+                // onClose();
               }}
               className="w-full h-12 rounded-xl bg-[var(--brand)] font-semibold text-white hover:opacity-90"
             >

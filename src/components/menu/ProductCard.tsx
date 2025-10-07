@@ -6,7 +6,6 @@ import SubMenuModal from './SubMenuModal'
 import MenuModal from './MenuModal'
 
 export default function ProductCard({ item }: any) {
-  console.log('item =>', item)
   const { menu } = useMain();
   const [menuItem, setMenuItem] = useState(null)
   const [subMenuData, setSubMenuData] = useState([])
@@ -17,12 +16,8 @@ export default function ProductCard({ item }: any) {
 
   const isDisabled = !Boolean(item?.Active);
 
-  const rawPrice =
-    order_type === "delivery"
-      ? (item?.Delivery_Price ?? item?.Collection_Price) // fallback to collection if delivery missing
-      : (item?.Collection_Price ?? item?.Delivery_Price); // fallback to delivery if collection missing
+  const rawPrice = order_type === "delivery" ? item?.Delivery_Price : item?.Collection_Price;
 
-  // parse safely to a number
   const displayPrice = (() => {
     const n = Number(rawPrice);
     return Number.isFinite(n) ? n : 0;
@@ -177,7 +172,7 @@ export default function ProductCard({ item }: any) {
         linkedMenu={linkedMenuData}
         show={showMenuModal}
         onClose={() => setShowMenuModal(false)}
-        orderType = {order_type}
+        orderType={order_type}
       // onSelect={(opt) => {
       //   // handle size choice (e.g., set state, then open MenuModal)
       //   // console.log("Selected size:", opt);

@@ -9,17 +9,10 @@ export const INIT_STATE: any = {
 
 const bucket = (state = INIT_STATE, action: any) => {
   switch (action.type) {
-    case BucketActionTypes.GET_RESTAURANT_GIFT_CARDS:
+    case BucketActionTypes.ADD_BUCKET_ITEM:
       return {
         ...state,
-        loading: true,
-      };
-
-    case BucketActionTypes.GET_RESTAURANT_GIFT_CARDS_SUCCESS:
-      return {
-        ...state,
-        loading: false,
-        bucket_items: action.payload,
+        bucket_items: [...state.bucket_items, action.payload],
       };
     default:
       return state;

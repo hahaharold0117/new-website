@@ -10,4 +10,11 @@ export const setAllMenuItem = (data) => ({
   payload: data
 });
 
+export const setOrderTypeVal = (orderType) => ({
+  type: MenuActionTypes.SET_ORDER_TYPE,
+  payload: orderType
+});
+
+
+
 

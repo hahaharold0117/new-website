@@ -173,22 +173,12 @@ export default function ProductCard({ item }: any) {
         show={showMenuModal}
         onClose={() => setShowMenuModal(false)}
         orderType={order_type}
-      // onSelect={(opt) => {
-      //   // handle size choice (e.g., set state, then open MenuModal)
-      //   // console.log("Selected size:", opt);
-      // }}
       />
-
       <SubMenuModal
         menuData={subMenuData}
         show={showSubMenuModal}
         onClose={() => setShowSubMenuModal(false)}
-      // onSelect={(opt) => {
-      //   // handle size choice (e.g., set state, then open MenuModal)
-      //   // console.log("Selected size:", opt);
-      // }}
       />
-
     </div>
   );
 }

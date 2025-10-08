@@ -14,6 +14,14 @@ const bucket = (state = INIT_STATE, action: any) => {
         ...state,
         bucket_items: [...state.bucket_items, action.payload],
       };
+
+    case BucketActionTypes.REMOVE_BUCKET_ITEM: {
+      const idx = action.payload as number;
+      return {
+        ...state,
+        bucket_items: state.bucket_items.filter((_, i) => i !== idx),
+      };
+    }
     default:
       return state;
   }

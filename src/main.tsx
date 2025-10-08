@@ -8,8 +8,6 @@ import {
 } from "react-router-dom";
 import { MainContextProvider } from "./contexts/main-context.tsx";
 import { Provider, useSelector } from "react-redux";
-import { useAxios } from "@/lib/axios";
-
 import Header from "./components/Header";
 import Hero from './components/Hero.tsx'
 import PromoSplit from './components/PromoSplit.tsx'
@@ -22,6 +20,7 @@ import Footer from './components/Footer.tsx'
 import Menu from './menu.tsx'
 import Gallery from './gallery.tsx'
 import Reservation from './reservation.tsx'
+import Billing from './billing.tsx'
 
 import { normalizeDomain } from './lib/utils.ts'
 import { configureStore } from "./store/index";
@@ -100,6 +99,11 @@ const router = createBrowserRouter([
         path: "reservation",
         element: <Reservation />,
         handle: { crumb: () => "Reservation" },
+      },
+       {
+        path: "billing",
+        element: <Billing />,
+        handle: { crumb: () => "Billing" },
       },
     ],
   },

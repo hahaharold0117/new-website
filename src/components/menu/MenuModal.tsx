@@ -1,9 +1,10 @@
 // components/MenuModal.tsx
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getMenuImageUrl } from "../../lib/utils";
+import { getMenuImageUrl, priceFor } from "../../lib/utils";
 import { LS_KEY } from '../../lib/env'
 import {addBucketItem} from '@/store/actions'
+
 
 export default function MenuModal({
   menuItem = null,
@@ -89,12 +90,6 @@ export default function MenuModal({
     setTopLevelLinkedItemPrice(tl);
     setLinkedItemPrice(lk);
   }, [topLevelLinkedCategoryData, linkedMenuData, qty, itemPrice]);
-
-  const priceFor = (x: any, orderType: "pickup" | "delivery") => {
-    const raw = orderType === "delivery" ? x?.Delivery_Price : x?.Collection_Price;
-    const n = Number(raw);
-    return Number.isFinite(n) ? n : 0;
-  };
 
   function sumTopLevelSelected(data: any[]) {
     let sum = 0;
@@ -337,22 +332,14 @@ export default function MenuModal({
             </button>
             <button
               onClick={() => {
-                // onConfirm({
-                //   id: productId,
-                //   Name: productName,
-                //   quantity: qty,
-                //   totalPrice,
-                //   basketTopLevelLinkedMenuData: topLevelLinkedCategoryData,
-                //   basketLinkedMenuData: linkedMenuData,
-                // });
                 const payload = {
                   id: productId,
                   Name: productName,
+                  menuItem: menuItem,
                   quantity: qty,
                   totalPrice,
                   basketTopLevelLinkedMenuData: topLevelLinkedCategoryData,
                   basketLinkedMenuData: linkedMenuData,
-                  // optional extras you may want later:
                   addedAt: Date.now(),
                   image: imgSrc,
                 };
@@ -364,7 +351,7 @@ export default function MenuModal({
                 } catch {
                   localStorage.setItem(LS_KEY, JSON.stringify([payload]));
                 }
-                // onClose();
+                onClose();
               }}
               className="w-full h-12 rounded-xl bg-[var(--brand)] font-semibold text-white hover:opacity-90"
             >

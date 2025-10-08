@@ -1,18 +1,67 @@
-import React from "react";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { addBucketItem } from "@/store/bucket/actions";
-import { LS_KEY } from '../../lib/env'
+import { addBucketItem, removeBucketItem } from "@/store/bucket/actions";
+import { LS_KEY } from "../../lib/env";
+import { FaEdit, FaTrashAlt } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { priceFor } from "../../lib/utils";
 
 type OrderType = "pickup" | "delivery";
 type Props = {
-  orderType: OrderType | null;               // comes from MenuPage
-  onChange: (v: OrderType) => void;          // tell MenuPage about changes
+  orderType: OrderType | null; // comes from MenuPage
+  onChange: (v: OrderType) => void; // tell MenuPage about changes
 };
 
 export default function BucketPanel({ orderType, onChange }: Props) {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { bucket_items } = useSelector((state: any) => state.bucket);
+
+  // helpers
+  const num = (v: any) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  // Sum selected option prices per UNIT from both legacy groups
+  function optionsPricePerUnit(it: any): number {
+    const sumTop = (it?.basketTopLevelLinkedMenuData ?? []).reduce((acc: number, sec: any) => {
+      const items = sec?.topLevelLinkedMenuItems ?? [];
+      const s = items
+        .filter((mi: any) => mi?.selected)
+        .reduce((a: number, mi: any) => a + num(priceFor(mi, orderType)), 0);
+      return acc + s;
+    }, 0);
+
+    const sumLinked = (it?.basketLinkedMenuData ?? []).reduce((acc: number, sec: any) => {
+      const items = sec?.menu_items ?? [];
+      const s = items
+        .filter((mi: any) => mi?.selected)
+        .reduce((a: number, mi: any) => a + num(priceFor(mi, orderType)), 0);
+      return acc + s;
+    }, 0);
+
+    return sumTop + sumLinked;
+  }
+
+  // Base unit price (pickup/delivery) from the menuItem (or item itself as fallback)
+  function baseUnitPrice(it: any): number {
+    const source = it?.menuItem ?? it;
+    return num(priceFor(source, orderType));
+  }
+
+  // Unit price including options
+  function unitPriceWithOptions(it: any): number {
+    return baseUnitPrice(it) + optionsPricePerUnit(it);
+  }
+
+  // Line total (authoritative: use totalPrice if present > 0, else compute)
+  function lineTotalOf(it: any): number {
+    const qty = num(it?.quantity) || 1;
+    const fromField = num(it?.totalPrice);
+    if (fromField > 0) return fromField;
+    return unitPriceWithOptions(it) * qty;
+  }
 
   useEffect(() => {
     if (bucket_items.length > 0) return;
@@ -23,14 +72,13 @@ export default function BucketPanel({ orderType, onChange }: Props) {
       if (Array.isArray(arr)) {
         arr.forEach((item) => dispatch(addBucketItem(item)));
       }
-    } catch { }
+    } catch {}
   }, [bucket_items.length, dispatch]);
 
+  // Build groups for UI (keeps your current rendering)
   function buildGroupsFromLegacy(it: any) {
     const groups: Array<{ title: string; items: Array<{ id: any; name: string; price: number }> }> =
       [];
-
-    const priceOf = (x: any) => Number(x?.price ?? x?.Price ?? x?.Collection_Price ?? 0) || 0;
 
     // top-level block
     (it?.basketTopLevelLinkedMenuData ?? []).forEach((sec: any) => {
@@ -40,7 +88,7 @@ export default function BucketPanel({ orderType, onChange }: Props) {
         .map((mi: any) => ({
           id: mi?.id ?? mi?.Id,
           name: mi?.Name ?? "Item",
-          price: priceOf(mi),
+          price: num(priceFor(mi, orderType)),
         }));
       if (items.length) groups.push({ title, items });
     });
@@ -53,7 +101,7 @@ export default function BucketPanel({ orderType, onChange }: Props) {
         .map((mi: any) => ({
           id: mi?.id ?? mi?.Id,
           name: mi?.Name ?? "Item",
-          price: priceOf(mi),
+          price: num(priceFor(mi, orderType)),
         }));
       if (items.length) groups.push({ title, items });
     });
@@ -61,18 +109,10 @@ export default function BucketPanel({ orderType, onChange }: Props) {
     return groups;
   }
 
+  // Totals section now computes from base + selected options per unit * qty
   function Totals({ bucketItems }: { bucketItems: any[] }) {
-    const subtotal = bucketItems.reduce((acc, it) => {
-      const unitPlusOptions =
-        (Number(it?.unitPrice ?? it?.basePrice ?? 0) || 0) +
-        (Number(it?.optionsPrice ?? 0) || 0);
-      const qty = Number(it?.quantity ?? it?.qty) || 1;
-      return acc + unitPlusOptions * qty;
-    }, 0);
-
-    // Example shipping rule; replace with your real one or from Redux
-    const shipping = 0;
-
+    const subtotal = bucketItems.reduce((acc, it) => acc + lineTotalOf(it), 0);
+    const shipping = 0; // plug your rule here
     return (
       <>
         <Row label="Subtotal" value={`£ ${subtotal.toFixed(2)}`} />
@@ -94,6 +134,34 @@ export default function BucketPanel({ orderType, onChange }: Props) {
     );
   }
 
+  const handleRemove = (item: any, idx: number) => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+
+      if (Array.isArray(arr)) {
+        const key = item?.addedAt ?? item?.uid;
+        let removeIndex = -1;
+
+        if (key) {
+          removeIndex = arr.findIndex((x: any) => (x?.addedAt ?? x?.uid) === key);
+        }
+        if (removeIndex === -1) removeIndex = idx;
+
+        if (removeIndex > -1) {
+          arr.splice(removeIndex, 1);
+          localStorage.setItem(LS_KEY, JSON.stringify(arr));
+        } else {
+          const rebuilt = bucket_items.filter((_: any, i: number) => i !== idx);
+          localStorage.setItem(LS_KEY, JSON.stringify(rebuilt));
+        }
+      }
+    } catch (e) {
+      console.error("Failed to update localStorage:", e);
+    }
+    dispatch(removeBucketItem(idx));
+  };
+
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
       {/* segmented switch: Pickup | Delivery */}
@@ -107,10 +175,11 @@ export default function BucketPanel({ orderType, onChange }: Props) {
             role="tab"
             aria-selected={orderType === "pickup"}
             onClick={() => onChange("pickup")}
-            className={`px-4 py-1.5 text-sm font-medium transition ${orderType === "pickup"
-              ? "bg-[var(--brand)] text-white"
-              : "bg-white text-neutral-700 hover:bg-neutral-50"
-              }`}
+            className={`px-4 py-1.5 text-sm font-medium transition ${
+              orderType === "pickup"
+                ? "bg-[var(--brand)] text-white"
+                : "bg-white text-neutral-700 hover:bg-neutral-50"
+            }`}
           >
             Pickup
           </button>
@@ -118,10 +187,11 @@ export default function BucketPanel({ orderType, onChange }: Props) {
             role="tab"
             aria-selected={orderType === "delivery"}
             onClick={() => onChange("delivery")}
-            className={`px-4 py-1.5 text-sm font-medium border-l border-neutral-300 transition ${orderType === "delivery"
-              ? "bg-[var(--brand)] text-white"
-              : "bg-white text-neutral-700 hover:bg-neutral-50"
-              }`}
+            className={`px-4 py-1.5 text-sm font-medium border-l border-neutral-300 transition ${
+              orderType === "delivery"
+                ? "bg-[var(--brand)] text-white"
+                : "bg-white text-neutral-700 hover:bg-neutral-50"
+            }`}
           >
             Delivery
           </button>
@@ -132,9 +202,15 @@ export default function BucketPanel({ orderType, onChange }: Props) {
         <>
           <div className="space-y-4">
             {bucket_items.map((it: any, idx: number) => {
-              const unitPlusOptions = (Number(it?.unitPrice) || 0) + (Number(it?.optionsPrice) || 0);
-              const lineTotal = unitPlusOptions * (Number(it?.quantity ?? it?.qty) || 1);
-              const qty = Number(it?.quantity ?? it?.qty) || 1;
+              const qty = num(it?.quantity) || 1;
+
+              // per-unit numbers
+              const unitBase = baseUnitPrice(it);
+              // const unitOptions = optionsPricePerUnit(it);
+              const unitWithOpts = unitBase;
+
+              // line total (prefer provided totalPrice)
+              const lineTotal = lineTotalOf(it);
 
               return (
                 <div key={it?.addedAt ?? `${it?.id}-${idx}`} className="rounded-lg border p-3">
@@ -148,9 +224,9 @@ export default function BucketPanel({ orderType, onChange }: Props) {
                     <div className="flex-1 min-w-0">
                       {/* Title + unit price */}
                       <div className="flex items-start justify-between">
-                        <div className="font-semibold truncate">{it?.Name ?? it?.name ?? "Item"}</div>
+                        <div className="font-semibold truncate">{it?.Name ?? "Item"}</div>
                         <div className="ml-2 shrink-0 text-sm font-semibold">
-                          £ {unitPlusOptions.toFixed(2)}
+                          £ {unitWithOpts.toFixed(2)}
                         </div>
                       </div>
 
@@ -162,17 +238,19 @@ export default function BucketPanel({ orderType, onChange }: Props) {
                           </div>
                           {(grp?.items ?? []).map((op: any, iIdx: number) => (
                             <div key={`${grp?.title}-${op?.id ?? iIdx}`} className="pl-3 text-[13px]">
-                              <span className="text-neutral-800">{op?.name ?? op?.Name ?? "Option"}</span>{" "}
+                              <span className="text-neutral-800">
+                                {op?.name ?? op?.Name ?? "Option"}
+                              </span>{" "}
                               <span className="text-neutral-500">
-                                ( £{Number(op?.price ?? 0).toFixed(2)} )
+                                ( £{num(op?.price).toFixed(2)} )
                               </span>
                             </div>
-                          ))}
+                          ))} 
                         </div>
                       ))}
 
-                      {/* Qty + line total (hook your own actions if needed) */}
-                      <div className="mt-2 flex items-center gap-3">
+                      {/* Qty + line total */}
+                      <div className="mt-2 flex items-center gap-2">
                         <button
                           type="button"
                           className="h-7 w-7 rounded-full bg-[var(--brand)] text-white grid place-items-center"
@@ -195,15 +273,26 @@ export default function BucketPanel({ orderType, onChange }: Props) {
 
                         <div className="ml-auto font-bold">£ {lineTotal.toFixed(2)}</div>
 
-                        <button
-                          type="button"
-                          className="ml-2 rounded border px-2 py-1 text-sm hover:bg-neutral-50"
-                          // onClick={() => dispatch(removeItem(idx))}
-                          disabled
-                          title="hook up to your remove action"
-                        >
-                          Remove
-                        </button>
+                        <div className="ml-2 flex items-center gap-1">
+                          <button
+                            type="button"
+                            className="h-8 w-8 flex items-center justify-center rounded-full border hover:bg-neutral-50"
+                            // onClick={() => handleEdit(it, idx)}
+                            disabled
+                            title="Edit item"
+                          >
+                            <FaEdit className="text-[var(--brand)] text-sm" />
+                          </button>
+
+                          <button
+                            type="button"
+                            className="h-8 w-8 flex items-center justify-center rounded-full border hover:bg-neutral-50"
+                            onClick={() => handleRemove(it, idx)}
+                            title="Remove item"
+                          >
+                            <FaTrashAlt className="text-red-500 text-sm pointer-events-none" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -212,14 +301,19 @@ export default function BucketPanel({ orderType, onChange }: Props) {
             })}
           </div>
 
-          {/* Totals (simple, local) */}
           <div className="mt-6 border-t pt-4">
             <h4 className="mb-2 text-lg font-semibold">Order Total</h4>
             <Totals bucketItems={bucket_items} />
+
+            <button
+              type="button"
+              className="mt-5 w-full rounded-full bg-[var(--brand)] text-white font-semibold py-3 text-base shadow-sm hover:opacity-90 transition"
+              onClick={() => navigate("/billing")}
+            >
+              Proceed to Checkout
+            </button>
           </div>
         </>
-
-
       ) : (
         <>
           <div className="rounded-xl bg-neutral-50/60 p-4">
@@ -251,5 +345,3 @@ export default function BucketPanel({ orderType, onChange }: Props) {
     </div>
   );
 }
-
-

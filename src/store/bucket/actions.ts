@@ -10,3 +10,8 @@ export const removeBucketItem = (index: number) => ({
   type: BucketActionTypes.REMOVE_BUCKET_ITEM,
   payload: index,
 });
+
+export const clearBucketItems = () => ({
+  type: BucketActionTypes.CLEAR_BUCKET,
+});
+

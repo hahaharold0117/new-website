@@ -4,8 +4,8 @@ import { useEffect } from "react";
 export default function SubMenuModal({
   menuData = [],
   show = false,
-  onClose = () => {},
-//   onSelect = () => {},
+  onClose = () => { },
+  onSelect = (v) => {},
 }) {
   // Close on ESC
   useEffect(() => {
@@ -17,12 +17,7 @@ export default function SubMenuModal({
 
   if (!show) return null;
 
-  // Normalize options from your subItems shape
-  const options = (menuData || []).map((s, i) => ({
-    id: s?.id,
-    label: s?.Name,
-    raw: s,
-  }));
+  const options = Array.isArray(menuData) ? menuData : [];
 
   const handleBackdrop = (e) => {
     if (e.target === e.currentTarget) onClose();
@@ -47,16 +42,16 @@ export default function SubMenuModal({
         </h2>
 
         <div className="flex flex-col gap-3">
-          {options.map((opt) => (
+          {options.map((item, i) => (
             <button
-              key={String(opt.id)}
+              key={String(item?.id)}
               onClick={() => {
-                // onSelect(opt.raw ?? opt);
+                onSelect(item);
                 onClose();
               }}
               className="w-full rounded-xl bg-[var(--brand)] text-white py-3 text-center text-lg font-semibold hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-black/30"
             >
-              {opt.label}
+              {item?.Name}
             </button>
           ))}
         </div>

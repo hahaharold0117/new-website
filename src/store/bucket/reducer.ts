@@ -22,6 +22,13 @@ const bucket = (state = INIT_STATE, action: any) => {
         bucket_items: state.bucket_items.filter((_, i) => i !== idx),
       };
     }
+
+    case BucketActionTypes.CLEAR_BUCKET: {
+      return {
+        ...state,
+        bucket_items: [],
+      };
+    }
     default:
       return state;
   }

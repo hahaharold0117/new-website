@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { addBucketItem, removeBucketItem } from "@/store/bucket/actions";
+import { addBucketItem, removeBucketItem, clearBucketItems } from "@/store/bucket/actions";
 import { LS_KEY } from "../../lib/env";
 import { FaEdit, FaTrashAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
@@ -72,7 +72,7 @@ export default function BucketPanel({ orderType, onChange }: Props) {
       if (Array.isArray(arr)) {
         arr.forEach((item) => dispatch(addBucketItem(item)));
       }
-    } catch {}
+    } catch { }
   }, [bucket_items.length, dispatch]);
 
   // Build groups for UI (keeps your current rendering)
@@ -162,6 +162,11 @@ export default function BucketPanel({ orderType, onChange }: Props) {
     dispatch(removeBucketItem(idx));
   };
 
+  const handleClearAll = () => {
+     try { localStorage.removeItem(LS_KEY); } catch {}
+     dispatch(clearBucketItems());
+  }
+
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
       {/* segmented switch: Pickup | Delivery */}
@@ -175,11 +180,10 @@ export default function BucketPanel({ orderType, onChange }: Props) {
             role="tab"
             aria-selected={orderType === "pickup"}
             onClick={() => onChange("pickup")}
-            className={`px-4 py-1.5 text-sm font-medium transition ${
-              orderType === "pickup"
-                ? "bg-[var(--brand)] text-white"
-                : "bg-white text-neutral-700 hover:bg-neutral-50"
-            }`}
+            className={`px-4 py-1.5 text-sm font-medium transition ${orderType === "pickup"
+              ? "bg-[var(--brand)] text-white"
+              : "bg-white text-neutral-700 hover:bg-neutral-50"
+              }`}
           >
             Pickup
           </button>
@@ -187,11 +191,10 @@ export default function BucketPanel({ orderType, onChange }: Props) {
             role="tab"
             aria-selected={orderType === "delivery"}
             onClick={() => onChange("delivery")}
-            className={`px-4 py-1.5 text-sm font-medium border-l border-neutral-300 transition ${
-              orderType === "delivery"
-                ? "bg-[var(--brand)] text-white"
-                : "bg-white text-neutral-700 hover:bg-neutral-50"
-            }`}
+            className={`px-4 py-1.5 text-sm font-medium border-l border-neutral-300 transition ${orderType === "delivery"
+              ? "bg-[var(--brand)] text-white"
+              : "bg-white text-neutral-700 hover:bg-neutral-50"
+              }`}
           >
             Delivery
           </button>
@@ -201,15 +204,22 @@ export default function BucketPanel({ orderType, onChange }: Props) {
       {bucket_items?.length > 0 ? (
         <>
           <div className="space-y-4">
+            <div className="flex items-center gap-2 justify-end">
+              <button
+                type="button"
+                onClick={handleClearAll}
+                disabled={!bucket_items?.length}
+                className="text-sm rounded-full border px-3 py-1.5 hover:bg-neutral-50 disabled:opacity-40"
+                title="Remove all items"
+              >
+                Clear all
+              </button>
+            </div>
+
             {bucket_items.map((it: any, idx: number) => {
               const qty = num(it?.quantity) || 1;
-
-              // per-unit numbers
               const unitBase = baseUnitPrice(it);
-              // const unitOptions = optionsPricePerUnit(it);
               const unitWithOpts = unitBase;
-
-              // line total (prefer provided totalPrice)
               const lineTotal = lineTotalOf(it);
 
               return (
@@ -245,7 +255,7 @@ export default function BucketPanel({ orderType, onChange }: Props) {
                                 ( £{num(op?.price).toFixed(2)} )
                               </span>
                             </div>
-                          ))} 
+                          ))}
                         </div>
                       ))}
 

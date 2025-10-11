@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
-import { getMenuImageUrl } from "../../lib/utils";
+import { getMenuImageUrl, priceFor } from "../../lib/utils";
 import { useDispatch, useSelector } from 'react-redux';
 import { useMain } from "@/contexts/main-context";
 import SubMenuModal from './SubMenuModal'
 import MenuModal from './MenuModal'
+import { LS_KEY } from '../../lib/env'
+import {addBucketItem} from '@/store/actions'
 
 export default function ProductCard({ item }: any) {
+  const dispatch = useDispatch();
   const { menu } = useMain();
   const [menuItem, setMenuItem] = useState(null)
   const [subMenuData, setSubMenuData] = useState([])
@@ -28,6 +31,7 @@ export default function ProductCard({ item }: any) {
 
   const processItem = async (item: any) => {
     try {
+      console.log('item =>', item)
       setMenuItem(item)
       let linked_category_data: any = null
       let linked_menu_data: any = null
@@ -111,13 +115,47 @@ export default function ProductCard({ item }: any) {
           setLinkedMenuData(linkedMenuData)
         }
 
-        if (linkedMenuData?.length > 0 || toplevel_linke_menu.length > 0) {
-          setShowMenuModal(true)
+        const hasBuiltLinked = Array.isArray(linkedMenuData) && linkedMenuData.length > 0;
+        const hasTopLevel = Array.isArray(toplevel_linke_menu) && toplevel_linke_menu.length > 0;
+
+        if (hasBuiltLinked || hasTopLevel) {
+          setShowMenuModal(true);
+          return;
         }
+        // const maybe = item?.BackImage != null ? getMenuImageUrl(item?.BackImage) : "";
+        // const imgSrc = typeof maybe === "string" && maybe.trim() ? maybe : "/default-menu-category.png";
+        const payload = {
+          id: item?.id,
+          Name: item?.Name,
+          menuItem: item,
+          quantity: 1,
+          totalPrice: priceFor(item, order_type),
+          basketTopLevelLinkedMenuData: toplevel_linke_menu,
+          basketLinkedMenuData: linkedMenuData,
+          addedAt: Date.now(),
+          image: imgSrc,
+        };
+
+        dispatch(addBucketItem(payload));
+        try {
+          const existing = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+          const next = Array.isArray(existing) ? [...existing, payload] : [payload];
+          localStorage.setItem(LS_KEY, JSON.stringify(next));
+        } catch {
+          localStorage.setItem(LS_KEY, JSON.stringify([payload]));
+        }
+
+        setShowMenuModal(false);
+        setShowSubMenuModal(false);
+
       }
     } catch (error) {
       console.log('error =>', error)
     }
+  }
+
+  const onSelectSubMenu = async (item: any) => {
+    processItem(item)
   }
 
   return (
@@ -177,6 +215,7 @@ export default function ProductCard({ item }: any) {
       <SubMenuModal
         menuData={subMenuData}
         show={showSubMenuModal}
+        onSelect={item => onSelectSubMenu(item)}
         onClose={() => setShowSubMenuModal(false)}
       />
     </div>

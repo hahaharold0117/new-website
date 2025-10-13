@@ -8,6 +8,8 @@ import { useMain } from "@/contexts/main-context";
 import { useDispatch } from "react-redux";
 import { setToplevelLinkedMenu, setAllMenuItem, setOrderTypeVal } from "@/store/actions";
 import OrderTypeModal, { OrderType } from "@/components/menu/OrderTypeModal";
+import toast from 'react-hot-toast';
+import { Toaster } from 'react-hot-toast';
 
 export default function MenuPage() {
   const dispatch = useDispatch();
@@ -122,10 +124,34 @@ export default function MenuPage() {
           <div className="max-h-[calc(100vh-10rem)] overflow-y-auto">
             <BucketPanel
               orderType={orderType} // state from MenuPage
-              onChange={(v) => {
+              onChange={(v, length) => {
                 setOrderType(v);
                 dispatch(setOrderTypeVal(v))
                 localStorage.setItem("order_type", v);
+                console.log('length =>', length)
+                if (length > 0) {
+                  toast('OderType was changed and the price may be changed!',
+                    {
+                      icon: '👏',
+                      style: {
+                        borderRadius: '10px',
+                        background: '#333',
+                        color: '#fff',
+                      },
+                    }
+                  );
+                } else {
+                  toast('Order Type was changed',
+                    {
+                      icon: '👏',
+                      style: {
+                        borderRadius: '10px',
+                        background: '#333',
+                        color: '#fff',
+                      },
+                    }
+                  );
+                }
               }}
             />
           </div>
@@ -143,6 +169,10 @@ export default function MenuPage() {
           dispatch(setOrderTypeVal(orderType))
           setShowOrderTypeModal(false);
         }}
+      />
+      < Toaster
+        position="top-right"
+        reverseOrder={false}
       />
     </Container>
   );

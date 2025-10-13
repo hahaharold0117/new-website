@@ -5,7 +5,7 @@ import { useMain } from "@/contexts/main-context";
 import SubMenuModal from './SubMenuModal'
 import MenuModal from './MenuModal'
 import { LS_KEY } from '../../lib/env'
-import {addBucketItem} from '@/store/actions'
+import { addBucketItem } from '@/store/actions'
 
 export default function ProductCard({ item }: any) {
   const dispatch = useDispatch();
@@ -206,11 +206,15 @@ export default function ProductCard({ item }: any) {
         </div>
       </div>
       <MenuModal
-        menuItem={menuItem}
-        linkedMenu={linkedMenuData}
         show={showMenuModal}
+        mode="add"                          // ← makes Confirm do an ADD
+        menuItem={menuItem}
+        orderType={order_type}              // string OK; modal coerces to "pickup"|"delivery"
+        linkedMenuData={linkedMenuData}     // ← rename prop
+        quantity={1}                 // optional
         onClose={() => setShowMenuModal(false)}
-        orderType={order_type}
+        onConfirm={(added) => {
+        }}
       />
       <SubMenuModal
         menuData={subMenuData}

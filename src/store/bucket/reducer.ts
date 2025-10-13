@@ -29,6 +29,11 @@ const bucket = (state = INIT_STATE, action: any) => {
         bucket_items: [],
       };
     }
+    case BucketActionTypes.UPDATE_BUCKET_ITEM: {
+      const { index, item } = action.payload;
+      const next = state.bucket_items.map((x, i) => (i === index ? item : x));
+      return { ...state, bucket_items: next };
+    }
     default:
       return state;
   }

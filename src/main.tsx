@@ -24,8 +24,9 @@ import Billing from './billing.tsx'
 
 import { normalizeDomain } from './lib/utils.ts'
 import { configureStore } from "./store/index";
-import {getMainSettingData} from './helpers/backend_helper.ts'
+import { getMainSettingData } from './helpers/backend_helper.ts'
 import ThemeVars from "./ThemeVars.tsx";
+import { Toaster } from 'react-hot-toast';
 
 const links = [
   { to: "/", label: "Home", id: "homeNav" },
@@ -73,6 +74,16 @@ export function Index() {
         </Container>
       </section>
       <Footer />
+      <Toaster
+          position="top-center"
+          toastOptions={{
+            className: 'rounded-xl shadow-lg',
+            duration: 3500,
+            success: { className: 'bg-emerald-600 text-white' },
+            error:   { className: 'bg-rose-600 text-white' },
+            loading: { className: 'bg-neutral-800 text-white' },
+          }}
+        />
     </>
   );
 }
@@ -100,7 +111,7 @@ const router = createBrowserRouter([
         element: <Reservation />,
         handle: { crumb: () => "Reservation" },
       },
-       {
+      {
         path: "billing",
         element: <Billing />,
         handle: { crumb: () => "Billing" },
@@ -144,7 +155,7 @@ function AppProviders() {
   }, [domain]);
 
   const ctxValue: any = mainSettingData ?? { restaurant: {}, menu: [] };
-  
+
   if (!mainSettingData && !error) {
     return (
       <div className="grid min-h-screen place-items-center text-neutral-500">
@@ -158,7 +169,7 @@ function AppProviders() {
 
   return (
     <MainContextProvider value={ctxValue}>
-       <ThemeVars color={brandColor} />
+      <ThemeVars color={brandColor} />
       <RouterProvider router={router} />
     </MainContextProvider>
   );

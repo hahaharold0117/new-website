@@ -15,3 +15,7 @@ export const clearBucketItems = () => ({
   type: BucketActionTypes.CLEAR_BUCKET,
 });
 
+export const updateBucketItem = (index, item) => ({
+  type: BucketActionTypes.UPDATE_BUCKET_ITEM,
+  payload: { index, item },
+});

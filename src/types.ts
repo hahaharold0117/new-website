@@ -8,4 +8,6 @@ export type Restaurant = {
   Street?: string;
   City?: string;
   PostCode?: string;
+  ShopName?: string;
+  BuildingName?: string;
 };

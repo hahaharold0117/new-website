@@ -12,7 +12,7 @@ export default function BucketPanel({ orderType, onChange }) {
   const navigate = useNavigate();
   const [showMenuModal, setShowMenuModal] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
-  const [editingItem, setEditingItem] = useState(null); // the bucket item being edited
+  const [editingItem, setEditingItem] = useState(null);
 
   const { bucket_items } = useSelector((state: any) => state.bucket);
 
@@ -52,16 +52,6 @@ export default function BucketPanel({ orderType, onChange }) {
     if (fromField > 0) return fromField;
     return unitPriceWithOptions(it) * qty;
   }
-
-  useEffect(() => {
-    if (bucket_items.length > 0) return;
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (!raw) return;
-      const arr = JSON.parse(raw);
-      if (Array.isArray(arr)) arr.forEach((item) => dispatch(addBucketItem(item)));
-    } catch { }
-  }, [bucket_items.length, dispatch]);
 
   function buildGroupsFromLegacy(it) {
     const groups = [];

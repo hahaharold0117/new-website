@@ -128,7 +128,6 @@ export default function MenuPage() {
                 setOrderType(v);
                 dispatch(setOrderTypeVal(v))
                 localStorage.setItem("order_type", v);
-                console.log('length =>', length)
                 if (length > 0) {
                   toast('OderType was changed and the price may be changed!',
                     {

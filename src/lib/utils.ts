@@ -13,3 +13,8 @@ export const priceFor = (x: any, orderType: "pickup" | "delivery") => {
   const n = Number(raw);
   return Number.isFinite(n) ? n : 0;
 };
+
+export const num = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};

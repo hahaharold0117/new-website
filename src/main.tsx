@@ -7,7 +7,7 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import { MainContextProvider } from "./contexts/main-context.tsx";
-import { Provider, useSelector } from "react-redux";
+import { Provider, useSelector, useDispatch } from "react-redux";
 import Header from "./components/Header";
 import Hero from './components/Hero.tsx'
 import PromoSplit from './components/PromoSplit.tsx'
@@ -27,6 +27,8 @@ import { configureStore } from "./store/index";
 import { getMainSettingData } from './helpers/backend_helper.ts'
 import ThemeVars from "./ThemeVars.tsx";
 import { Toaster } from 'react-hot-toast';
+import { LS_KEY } from "./lib/env";
+import { addBucketItem } from "@/store/bucket/actions";
 
 const links = [
   { to: "/", label: "Home", id: "homeNav" },
@@ -75,15 +77,15 @@ export function Index() {
       </section>
       <Footer />
       <Toaster
-          position="top-center"
-          toastOptions={{
-            className: 'rounded-xl shadow-lg',
-            duration: 3500,
-            success: { className: 'bg-emerald-600 text-white' },
-            error:   { className: 'bg-rose-600 text-white' },
-            loading: { className: 'bg-neutral-800 text-white' },
-          }}
-        />
+        position="top-center"
+        toastOptions={{
+          className: 'rounded-xl shadow-lg',
+          duration: 3500,
+          success: { className: 'bg-emerald-600 text-white' },
+          error: { className: 'bg-rose-600 text-white' },
+          loading: { className: 'bg-neutral-800 text-white' },
+        }}
+      />
     </>
   );
 }
@@ -121,8 +123,10 @@ const router = createBrowserRouter([
 ]);
 
 function AppProviders() {
+  const dispatch = useDispatch();
   const [mainSettingData, setMainSettingData] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { bucket_items } = useSelector((state: any) => state.bucket);
 
   const domain = useMemo(
     () => (typeof window !== "undefined" ? normalizeDomain(window.location.host) : "localhost"),
@@ -153,6 +157,16 @@ function AppProviders() {
       alive = false;
     };
   }, [domain]);
+
+  useEffect(() => {
+    if (bucket_items.length > 0) return;
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return;
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) arr.forEach((item) => dispatch(addBucketItem(item)));
+    } catch { }
+  }, [bucket_items.length, dispatch]);
 
   const ctxValue: any = mainSettingData ?? { restaurant: {}, menu: [] };
 

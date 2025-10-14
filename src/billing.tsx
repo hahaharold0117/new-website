@@ -1,14 +1,12 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import OrderSummary from "@/components/billing/OrderSummary";
+import { Link } from "react-router-dom";
 
-type Method = "Delivery" | "Click & Collect";
 type Payment = "cash" | "card";
 
 export default function BillingPage() {
-  const [method, setMethod] = useState<Method>("Click & Collect");
   const [payment, setPayment] = useState<Payment>("cash");
   const [tip, setTip] = useState<number>(0);
-
   // demo data — swap with Redux/cart data
   const items = useMemo(
     () => [
@@ -27,60 +25,32 @@ export default function BillingPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
-      {/* Page title + breadcrumb (static for UI) */}
       <div className="mb-6">
         <h1 className="text-3xl font-semibold">Billing Details</h1>
         <nav className="mt-2 text-sm text-neutral-500">
           <ol className="flex items-center gap-2">
-            <li>Home</li>
+            <Link to="/" className="hover:underline">
+              Home
+            </Link>
+
             <li>›</li>
-            <li>Menu</li>
+            <Link to="/menu" className="hover:underline">
+              Menu
+            </Link>
             <li>›</li>
-            <li>Basket</li>
+            <Link to="/menu" className="hover:underline">
+              Basket
+            </Link>
             <li>›</li>
-            <li className="text-neutral-700">Billing</li>
+            <Link to="/billing" className="hover:underline">
+              Billing
+            </Link>
           </ol>
         </nav>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8">
-        {/* LEFT: Billing form */}
         <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-          {/* Method tabs */}
-          <div className="mb-5">
-            <div
-              role="tablist"
-              aria-label="Order Method"
-              className="inline-flex overflow-hidden rounded-full border border-neutral-300"
-            >
-              <button
-                role="tab"
-                aria-selected={method === "Delivery"}
-                onClick={() => setMethod("Delivery")}
-                className={`px-4 py-1.5 text-sm font-medium transition ${
-                  method === "Delivery"
-                    ? "bg-[var(--brand)] text-white"
-                    : "bg-white text-neutral-700 hover:bg-neutral-50"
-                }`}
-              >
-                Delivery
-              </button>
-              <button
-                role="tab"
-                aria-selected={method === "Click & Collect"}
-                onClick={() => setMethod("Click & Collect")}
-                className={`px-4 py-1.5 text-sm font-medium border-l border-neutral-300 transition ${
-                  method === "Click & Collect"
-                    ? "bg-[var(--brand)] text-white"
-                    : "bg-white text-neutral-700 hover:bg-neutral-50"
-                }`}
-              >
-                Click & Collect
-              </button>
-            </div>
-          </div>
-
-          {/* Form */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="First Name *" placeholder="Placeholder" />
             <Field label="Last Name *" placeholder="Placeholder" />
@@ -101,30 +71,17 @@ export default function BillingPage() {
           <button
             type="button"
             className="mt-6 w-full rounded-lg bg-[var(--brand)] text-white font-semibold py-3 text-base shadow-sm hover:opacity-90 transition"
-            onClick={() => console.log({ method, payment, tip, subtotal, total })}
+            onClick={() => console.log({ payment, tip, subtotal, total })}
           >
             Place Order
           </button>
         </section>
 
-        {/* RIGHT: Summary */}
-        <OrderSummary
-          className="lg:sticky lg:top-6"
-          pickupInfo={{
-            name: "Liam Johnson",
-            method,
-            address: "Istanbul Restaurant, Anytown, CA 12345",
-          }}
-          items={items}
-          subtotal={subtotal}
-          total={total}
-        />
+        <OrderSummary />
       </div>
     </div>
   );
 }
-
-/* ---------- Small UI bits ---------- */
 
 function Field({
   label,
@@ -175,11 +132,10 @@ function TipBox({
               setTip(p);
               setCustom("");
             }}
-            className={`rounded-full border px-3 py-1.5 text-sm ${
-              tip === p
-                ? "border-[var(--brand)] text-[var(--brand)]"
-                : "border-neutral-300 text-neutral-700 hover:bg-neutral-50"
-            }`}
+            className={`rounded-full border px-3 py-1.5 text-sm ${tip === p
+              ? "border-[var(--brand)] text-[var(--brand)]"
+              : "border-neutral-300 text-neutral-700 hover:bg-neutral-50"
+              }`}
           >
             {p === 0 ? "No" : `£${p.toFixed(2)}`}
           </button>

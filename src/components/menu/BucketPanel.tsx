@@ -316,7 +316,7 @@ export default function BucketPanel({ orderType, onChange }) {
                             onClick={() => handleRemove(it, idx)}
                             title="Remove item"
                           >
-                            <FaTrashAlt className="text-red-500 text-sm pointer-events-none" />
+                            <FaTrashAlt className="text-[var(--brand)] text-sm pointer-events-none" />
                           </button>
                         </div>
                       </div>

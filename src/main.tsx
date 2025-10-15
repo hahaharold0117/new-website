@@ -178,8 +178,8 @@ function AppProviders() {
     );
   }
 
-  // const brandColor = "#3f5f2f"
-  const brandColor = "#FF7A1A"
+  const brandColor = "#3f5f2f"
+  // const brandColor = "#FF7A1A"
 
   return (
     <MainContextProvider value={ctxValue}>

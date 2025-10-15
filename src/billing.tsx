@@ -1,27 +1,22 @@
 import React, { useMemo, useState, useEffect } from "react";
 import OrderSummary from "@/components/billing/OrderSummary";
 import { Link } from "react-router-dom";
+import AuthPageModal from "@/components/AuthPageModal"
 
 type Payment = "cash" | "card";
 
 export default function BillingPage() {
   const [payment, setPayment] = useState<Payment>("cash");
   const [tip, setTip] = useState<number>(0);
-  // demo data — swap with Redux/cart data
-  const items = useMemo(
-    () => [
-      { name: "Turkish Lentil Soup", qty: 1, price: 250 },
-      { name: "Supermix Pizza", qty: 2, price: 49 * 2 }, // price is total for that line
-      { name: "Extras", qty: 2, price: 49 * 2 },
-    ],
-    []
-  );
+  const [showAuthModal, setShowAuthModal] = useState(false)
 
-  const subtotal = useMemo(
-    () => items.reduce((s, it) => s + it.price, 0),
-    [items]
-  );
-  const total = useMemo(() => subtotal + tip, [subtotal, tip]);
+  const handleOrder = () => {
+    const raw = localStorage.getItem("auth_user");
+    if (!raw) {
+      //show customer login and signup screen
+      setShowAuthModal(true)
+    }
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
@@ -67,11 +62,10 @@ export default function BillingPage() {
             <PaymentBox payment={payment} setPayment={setPayment} />
           </div>
 
-          {/* Place Order */}
           <button
             type="button"
             className="mt-6 w-full rounded-lg bg-[var(--brand)] text-white font-semibold py-3 text-base shadow-sm hover:opacity-90 transition"
-            onClick={() => console.log({ payment, tip, subtotal, total })}
+            onClick={handleOrder}
           >
             Place Order
           </button>
@@ -79,6 +73,17 @@ export default function BillingPage() {
 
         <OrderSummary />
       </div>
+
+      <AuthPageModal
+        show={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={(user) => {
+          localStorage.setItem("auth_user", JSON.stringify(user));
+          setShowAuthModal(false);
+          // optional: continue checkout automatically
+          // handleOrder();
+        }}
+      />
     </div>
   );
 }

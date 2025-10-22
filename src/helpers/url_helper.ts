@@ -1,1 +1,5 @@
 export const GET_MAIN_SETTING = '/public/main-data'
+export const CUSTOMER_LOGIN = '/customers/auth/login'
+export const CUSTOMER_SIGNUP = '/customers/auth/signup'
+export const CREATE_ORDER = '/orders'
+export const BATCH_CREATE_ORDER = '/orders/details/batch'

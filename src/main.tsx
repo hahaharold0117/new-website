@@ -85,6 +85,7 @@ export function Index() {
           error: { className: 'bg-rose-600 text-white' },
           loading: { className: 'bg-neutral-800 text-white' },
         }}
+        containerStyle={{ zIndex: 100000 }}
       />
     </>
   );

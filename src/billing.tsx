@@ -2,21 +2,175 @@ import React, { useMemo, useState, useEffect } from "react";
 import OrderSummary from "@/components/billing/OrderSummary";
 import { Link } from "react-router-dom";
 import AuthPageModal from "@/components/AuthPageModal"
+import { useMain } from "@/contexts/main-context";
+import { useSelector, useDispatch } from "react-redux";
+import moment from 'moment-timezone';
+import { createOrder, createOrderDetailBatch } from '@/helpers/backend_helper'
+import { useNavigate } from "react-router-dom";
 
 type Payment = "cash" | "card";
 
 export default function BillingPage() {
+  const navigate = useNavigate();
+  const { restaurant } = useMain();
   const [payment, setPayment] = useState<Payment>("cash");
   const [tip, setTip] = useState<number>(0);
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const { bucket_items } = useSelector((state: any) => state.bucket);
+  const { order_type } = useSelector((state: any) => state.menu);
+  const [loading, setLoading] = useState(false);
 
-  const handleOrder = () => {
-    const raw = localStorage.getItem("auth_user");
-    if (!raw) {
-      //show customer login and signup screen
-      setShowAuthModal(true)
-    }
+  const restaurantId = restaurant && typeof restaurant === "object" && "id" in restaurant
+    ? (restaurant as { id: number | string }).id
+    : undefined;
+
+  function computeSubtotal(items: any[]) {
+    // expects each item to have { quantity, totalPrice } or { quantity, menuItem.price }
+    return items.reduce((sum, it) => {
+      const qty = Number(it.quantity || 1);
+      const line =
+        typeof it.totalPrice === "number"
+          ? it.totalPrice
+          : qty * Number(it.menuItem?.price ?? it.price ?? 0);
+      return sum + (Number.isFinite(line) ? line : 0);
+    }, 0);
   }
+
+  const handleOrder = async () => {
+    if (loading) return; // avoid double-clicks
+    setLoading(true);
+    try {
+      const raw = localStorage.getItem("authUser");
+      if (!raw) {
+        setShowAuthModal(true);
+        return; // finally{} will run and stop the spinner
+      }
+
+      if (!bucket_items.length) {
+        console.warn("No items in basket.");
+        return;
+      }
+
+      const dtCreated = moment().tz('Europe/London').format('YYYY-MM-DDTHH:mm:ss');
+
+      const serviceCharge = 5;
+      const deliveryCharge = 3;
+      const discount = 2.5;
+
+      const subtotal = computeSubtotal(bucket_items);
+      const totalAmount = subtotal + (Number(tip) || 0) + serviceCharge + deliveryCharge;
+      const amountDue = Number((totalAmount - discount).toFixed(2));
+      const amountRecv = payment === "card" ? Number(totalAmount.toFixed(2)) : 0;
+      const change = Number((amountRecv - amountDue).toFixed(2));
+
+      const authUser = JSON.parse(localStorage.getItem("authUser") || "null");
+      const CustomerId = authUser?.id ?? null;
+
+      const orderData = {
+        CustomerId,
+        RestaurantId: restaurantId ?? null,
+        ComputerName: "Website",
+        Operator: 123,
+        OrderDate: dtCreated,
+        PayStatus: payment === "card" ? "PAID" : "NOT PAID",
+        TotalAmount: Number(totalAmount.toFixed(2)),
+        ServiceCharge: Number(serviceCharge.toFixed(2)),
+        DeliveryCharge: Number(deliveryCharge.toFixed(2)),
+        Order_Type: order_type,
+        Order_Status: "CONFIRMED",
+        Payment_Type: payment === "card" ? "CARD" : "CASH",
+        Printed: true,
+        Discount: Number(discount.toFixed(2)),
+        AmountDue: amountDue,
+        AmountReceived: amountRecv,
+        Change: change,
+        Driver_Id: 0,
+        WebOrderId: 0,
+        IsYummyOrder: false,
+        DtCreated: dtCreated,
+        DtConfirmed: dtCreated,
+        IsWooOrder: false,
+        UUID: (crypto?.randomUUID && crypto.randomUUID()) || `uuid-${Date.now()}`,
+        Tip: Number((Number(tip) || 0).toFixed(2)),
+        IsSelfService: false,
+        Table_No: "",
+        Table_Area_Name: "",
+        createdAt: dtCreated,
+        updatedAt: dtCreated,
+      };
+
+      const createOrderRes = await createOrder(orderData);
+
+      if (createOrderRes?.data?.success) {
+        const result = createOrderRes.data.result;
+        result.Table_No = "";
+        result.Table_Area_Name = "";
+
+        const order_details = bucket_items.map((basketItem) => {
+          let linkedDataReceipt = [];
+          let DressingData = "";
+
+          if (basketItem?.basketLinkedMenuData?.length) {
+            basketItem.basketLinkedMenuData.forEach((element) => {
+              element.menu_items.forEach((menuItem) => {
+                if (menuItem.selected) {
+                  DressingData += menuItem.Name + ",";
+                  linkedDataReceipt.push({
+                    linkedCategoryName: element.menu_category.Name,
+                    linkedMenuItem: { menu_item_name: menuItem.Name, price: menuItem.Collection_Price },
+                  });
+                }
+              });
+            });
+          }
+
+          if (basketItem?.basketTopLevelLinkedMenuData?.length) {
+            basketItem.basketTopLevelLinkedMenuData.forEach((element) => {
+              element.topLevelLinkedMenuItems.forEach((menuItem) => {
+                if (menuItem?.selected) {
+                  DressingData += menuItem.Name + ",";
+                  linkedDataReceipt.push({
+                    linkedCategoryName: element.topLevelLinkedCategory.Name,
+                    linkedMenuItem: { menu_item_name: menuItem?.Name, price: menuItem?.Collection_Price },
+                  });
+                }
+              });
+            });
+          }
+
+          const linkedDataReceiptTemp = {
+            detailData: linkedDataReceipt,
+            basketItem,
+          };
+
+          return {
+            OrderId: result.id,
+            Menu_Item_Name: basketItem.Name,
+            Price: basketItem.Collection_Price,
+            MenuItemId: basketItem.id,
+            SubMenuItemId: basketItem?.subMenuId || null,
+            ItemLevel: 1,
+            Dressing: DressingData,
+            orderDate: dtCreated,
+            VatRate: 1,
+            VatAmount: 1,
+            Quantity: basketItem.quantity,
+            Status: 1,
+            LinkedDataReceipt: JSON.stringify(linkedDataReceiptTemp),
+          };
+        });
+
+        const createOrderDetailRes = await createOrderDetailBatch(order_details);
+        if (createOrderDetailRes?.data?.success) {
+          navigate('/success');
+        }
+      }
+    } catch (error) {
+      console.log('error =>', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
@@ -64,25 +218,34 @@ export default function BillingPage() {
 
           <button
             type="button"
-            className="mt-6 w-full rounded-lg bg-[var(--brand)] text-white font-semibold py-3 text-base shadow-sm hover:opacity-90 transition"
+            className="mt-6 w-full rounded-lg bg-[var(--brand)] text-white font-semibold py-3 text-base shadow-sm hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed"
             onClick={handleOrder}
+            disabled={loading}
+            aria-busy={loading}
           >
-            Place Order
+            {loading ? (
+              <span className="inline-flex items-center gap-2">
+                <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                Placing order…
+              </span>
+            ) : (
+              "Place Order"
+            )}
           </button>
-        </section>
 
+        </section>
         <OrderSummary />
       </div>
-
       <AuthPageModal
         show={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         onSuccess={(user) => {
-          localStorage.setItem("auth_user", JSON.stringify(user));
           setShowAuthModal(false);
-          // optional: continue checkout automatically
-          // handleOrder();
         }}
+        restaurantId={restaurantId}
       />
     </div>
   );

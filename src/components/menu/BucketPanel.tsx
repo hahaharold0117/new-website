@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { addBucketItem, removeBucketItem, clearBucketItems, updateBucketItem } from "@/store/bucket/actions";
+import { removeBucketItem, clearBucketItems, updateBucketItem } from "@/store/bucket/actions";
 import { LS_KEY } from "../../lib/env";
 import { FaEdit, FaTrashAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";

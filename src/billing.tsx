@@ -100,9 +100,10 @@ export default function BillingPage() {
       };
 
       const createOrderRes = await createOrder(orderData);
+      console.log('createOrderRes =>', createOrderRes)
 
-      if (createOrderRes?.data?.success) {
-        const result = createOrderRes.data.result;
+      if (createOrderRes?.success) {
+        const result = createOrderRes.result;
         result.Table_No = "";
         result.Table_Area_Name = "";
 
@@ -161,8 +162,17 @@ export default function BillingPage() {
         });
 
         const createOrderDetailRes = await createOrderDetailBatch(order_details);
-        if (createOrderDetailRes?.data?.success) {
-          navigate('/success');
+        
+        if (createOrderDetailRes?.success) {
+          // navigate('/success');
+          navigate("/success", {
+            state: {
+              orderId: result.id,
+              total: Number(totalAmount.toFixed(2)),
+              payment,                // "cash" | "card"
+              orderType: order_type,  // "pickup" | "delivery"
+            },
+          });
         }
       }
     } catch (error) {

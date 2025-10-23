@@ -21,6 +21,7 @@ import Menu from './menu.tsx'
 import Gallery from './gallery.tsx'
 import Reservation from './reservation.tsx'
 import Billing from './billing.tsx'
+import Success from './success.tsx'
 
 import { normalizeDomain } from './lib/utils.ts'
 import { configureStore } from "./store/index";
@@ -118,6 +119,11 @@ const router = createBrowserRouter([
         path: "billing",
         element: <Billing />,
         handle: { crumb: () => "Billing" },
+      },
+      {
+        path: "success",
+        element: <Success />,
+        handle: { crumb: () => "Success" },
       },
     ],
   },

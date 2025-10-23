@@ -1,8 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+// import { setAuthToken } from "@/api/http";
+import { loginCustomer, signupCustomer, clearLoginFlag, clearSignupFlag } from "@/store/auth/actions";
+import { useDispatch, useSelector } from "react-redux";
+import toast from "react-hot-toast";
+import { Toaster } from 'react-hot-toast';
 
-
-export default function AuthPageModal({ show, onClose, onSuccess }) {
+// Pass restaurantId from your page/layout (don't hardcode)
+export default function AuthPageModal({ show, onClose, onSuccess, restaurantId }) {
   const [tab, setTab] = useState("login"); // 'login' | 'signup'
 
   useEffect(() => {
@@ -23,45 +28,38 @@ export default function AuthPageModal({ show, onClose, onSuccess }) {
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-xl border border-neutral-200">
-
         <div className="border-b border-neutral-200">
-          <div
-            role="tablist"
-            aria-label="Auth"
-            className="flex rounded-t-2xl overflow-hidden bg-white"
-          >
+          <div role="tablist" aria-label="Auth" className="flex rounded-t-2xl overflow-hidden bg-white">
             <TabButton active={tab === "login"} onClick={() => setTab("login")} side="left">
               SIGN IN
             </TabButton>
             <TabButton active={tab === "signup"} onClick={() => setTab("signup")} side="right">
               SIGN UP
             </TabButton>
-
-            {/* Close button absolutely positioned still ok */}
           </div>
         </div>
 
-        {/* Body */}
         <div className="px-6 py-6">
           {tab === "login" ? (
             <LoginForm
-              onSuccess={(user) => {
-                localStorage.setItem("auth_user", JSON.stringify(user));
-                onSuccess?.(user);
+              restaurantId={restaurantId}
+              onSuccess={(customer) => {
+                localStorage.setItem("customer", JSON.stringify(customer));
+                onSuccess?.(customer);
               }}
             />
           ) : (
             <SignupForm
-              onSuccess={(user) => {
-                localStorage.setItem("auth_user", JSON.stringify(user));
-                onSuccess?.(user);
+              restaurantId={restaurantId}
+              onSuccess={(customer) => {
+                localStorage.setItem("customer", JSON.stringify(customer));
+                onSuccess?.(customer);
               }}
               switchToLogin={() => setTab("login")}
             />
           )}
         </div>
 
-        {/* Close button in corner */}
         <button
           onClick={onClose}
           aria-label="Close"
@@ -75,8 +73,7 @@ export default function AuthPageModal({ show, onClose, onSuccess }) {
 }
 
 function TabButton({ active, onClick, children, side }) {
-  const edgeRadius =
-    side === "left" ? "rounded-tl-2xl" : side === "right" ? "rounded-tr-2xl" : "";
+  const edgeRadius = side === "left" ? "rounded-tl-2xl" : side === "right" ? "rounded-tr-2xl" : "";
   return (
     <button
       role="tab"
@@ -95,10 +92,9 @@ function TabButton({ active, onClick, children, side }) {
   );
 }
 
+/* ---------- Inputs ---------- */
 
-/* ---------------- Reusable inputs ---------------- */
-
-function Input({ label, type = "text", value, onChange, placeholder, required, disabled }) {
+function Input({ label, type = "text", value, onChange, placeholder, required = false, disabled = false }) {
   return (
     <label className="block">
       <span className="mb-1 block text-sm font-medium text-neutral-700">{label}</span>
@@ -118,7 +114,6 @@ function Input({ label, type = "text", value, onChange, placeholder, required, d
 
 function PasswordInput({ label, value, onChange, placeholder, required }) {
   const [show, setShow] = React.useState(false);
-
   return (
     <label className="block">
       <span className="mb-1 block text-sm font-medium text-neutral-700">{label}</span>
@@ -131,7 +126,6 @@ function PasswordInput({ label, value, onChange, placeholder, required }) {
           required={required}
           className="w-full rounded-l-lg px-3 py-2 outline-none"
         />
-
         <button
           type="button"
           onClick={() => setShow((s) => !s)}
@@ -146,7 +140,6 @@ function PasswordInput({ label, value, onChange, placeholder, required }) {
   );
 }
 
-
 function InlineError({ children }) {
   return (
     <div className="rounded-lg bg-red-50 text-red-700 border border-red-200 px-3 py-2 text-sm">
@@ -155,33 +148,47 @@ function InlineError({ children }) {
   );
 }
 
-/* ---------------- Forms ---------------- */
 
-function LoginForm({ onSuccess }) {
+function LoginForm({ onSuccess, restaurantId }) {
+  const dispatch = useDispatch();
   const [email, setEmail] = useState("");
   const [password, setPw] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
+  const { loading, error, login_success, authCustomer } = useSelector((state: any) => state.auth);
 
-  const submit = async (e) => {
+  useEffect(() => {
+    if (!login_success) return;
+    console.log('xxxx success')
+    toast("Signed in successfully", {
+      icon: "👏",
+      style: { borderRadius: "10px", background: "#333", color: "#fff" },
+    });
+    onSuccess?.(authCustomer);
+    dispatch(clearLoginFlag());
+  }, [login_success, authCustomer, dispatch, onSuccess]);
+
+  // optional: show error toast when error string arrives
+  useEffect(() => {
+    if (!error) return;
+    toast.error(typeof error === "string" ? error : "Login failed");
+  }, [error]);
+
+
+  function submit(e) {
     e.preventDefault();
-    setErr("");
-    setLoading(true);
-    try {
-      const user = await fakeSignIn({ email, password }); // replace with your API
-      onSuccess?.(user);
-    } catch (e) {
-      setErr(e?.message || "Login failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+    dispatch(
+      loginCustomer({
+        restaurant_id: restaurantId,
+        email,
+        password,
+      })
+    );
+  }
 
   return (
     <form id="panel-login" role="tabpanel" onSubmit={submit} className="space-y-3">
-      <Input label="Email" type="email" value={email} onChange={setEmail} placeholder="you@example.com" required disabled={false}/>
+      <Input label="Email" type="email" value={email} onChange={setEmail} placeholder="you@example.com" required />
       <PasswordInput label="Password" value={password} onChange={setPw} placeholder="••••••••" required />
-      {err && <InlineError>{err}</InlineError>}
+      {error && <InlineError>{error}</InlineError>}
       <button
         type="submit"
         disabled={loading}
@@ -189,43 +196,68 @@ function LoginForm({ onSuccess }) {
       >
         {loading ? "Signing in..." : "Sign In"}
       </button>
+
     </form>
   );
 }
 
-function SignupForm({ onSuccess, switchToLogin }) {
+function SignupForm({ onSuccess, switchToLogin, restaurantId }) {
+  const dispatch = useDispatch();
   const [firstName, setFirst] = useState("");
   const [lastName, setLast] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [password, setPw] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [postcode, setPostcode] = useState("");
 
-  const submit = async (e) => {
+  const { loading, error, signup_success } = useSelector((state: any) => state.auth);
+
+
+  useEffect(() => {
+    if (!signup_success) return;
+    toast("Account created. Please sign in.", {
+      icon: "🎉",
+      style: { borderRadius: "10px", background: "#333", color: "#fff" },
+    });
+    switchToLogin?.();
+    dispatch(clearSignupFlag());
+  }, [signup_success, dispatch, switchToLogin]);
+
+
+  function submit(e) {
     e.preventDefault();
-    setErr("");
-    setLoading(true);
-    try {
-      const user = await fakeSignUp({ firstName, lastName, email, phone, password }); // replace with your API
-      onSuccess?.(user);
-    } catch (e) {
-      setErr(e?.message || "Signup failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const payload = {
+      firstname: firstName,
+      lastname: lastName,
+      email,
+      password,
+      RestaurantId: restaurantId,
+      address,
+      city,
+      postcode,
+    };
+    dispatch(signupCustomer(payload));
+  }
 
   return (
     <form id="panel-signup" role="tabpanel" onSubmit={submit} className="space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Input label="First Name" value={firstName} onChange={setFirst} placeholder="Jane" disabled = {false} required />
-        <Input label="Last Name" value={lastName} onChange={setLast} placeholder="Doe" disabled = {false} required />
+        <Input label="First Name" value={firstName} onChange={setFirst} placeholder="Jane" required />
+        <Input label="Last Name" value={lastName} onChange={setLast} placeholder="Doe" required />
       </div>
-      <Input label="Email" type="email" value={email} onChange={setEmail} placeholder="jane@doe.com" required disabled = {false}/>
-      <Input label="Phone" type="tel" value={phone} onChange={setPhone} placeholder="+1 555-555-5555" disabled = {false} required/>
+
+      <Input label="Email" type="email" value={email} onChange={setEmail} placeholder="jane@doe.com" required />
       <PasswordInput label="Password" value={password} onChange={setPw} placeholder="••••••••" required />
-      {err && <InlineError>{err}</InlineError>}
+
+      <Input label="Address" value={address} onChange={setAddress} placeholder="123 Main St" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Input label="City" value={city} onChange={setCity} placeholder="CityName" />
+        <Input label="Postcode" value={postcode} onChange={setPostcode} placeholder="12345" />
+      </div>
+
+      {error && <InlineError>{error}</InlineError>}
+
       <button
         type="submit"
         disabled={loading}
@@ -233,6 +265,7 @@ function SignupForm({ onSuccess, switchToLogin }) {
       >
         {loading ? "Create Account..." : "Create Account"}
       </button>
+
       <p className="text-sm text-neutral-600 text-center">
         Already have an account?{" "}
         <button type="button" onClick={switchToLogin} className="text-[var(--brand)] hover:underline">
@@ -241,30 +274,4 @@ function SignupForm({ onSuccess, switchToLogin }) {
       </p>
     </form>
   );
-}
-
-/* ---------------- Fake API (replace) ---------------- */
-
-async function fakeSignIn({ email, password }) {
-  await sleep(500);
-  if (!email || !password) throw new Error("Email and password are required");
-  return {
-    id: "u_123",
-    firstName: "Roman",
-    lastName: "Customer",
-    email,
-    phone: "+1 555-555-0000",
-    token: "demo-token",
-  };
-}
-
-async function fakeSignUp({ firstName, lastName, email, phone, password }) {
-  await sleep(700);
-  if (!firstName || !lastName || !email || !password)
-    throw new Error("Please fill all required fields");
-  return { id: "u_456", firstName, lastName, email, phone, token: "demo-token" };
-}
-
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
 }

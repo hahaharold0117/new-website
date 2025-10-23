@@ -21,6 +21,7 @@ import Menu from './menu.tsx'
 import Gallery from './gallery.tsx'
 import Reservation from './reservation.tsx'
 import Billing from './billing.tsx'
+import Success from './success.tsx'
 
 import { normalizeDomain } from './lib/utils.ts'
 import { configureStore } from "./store/index";
@@ -85,6 +86,7 @@ export function Index() {
           error: { className: 'bg-rose-600 text-white' },
           loading: { className: 'bg-neutral-800 text-white' },
         }}
+        containerStyle={{ zIndex: 100000 }}
       />
     </>
   );
@@ -117,6 +119,11 @@ const router = createBrowserRouter([
         path: "billing",
         element: <Billing />,
         handle: { crumb: () => "Billing" },
+      },
+      {
+        path: "success",
+        element: <Success />,
+        handle: { crumb: () => "Success" },
       },
     ],
   },

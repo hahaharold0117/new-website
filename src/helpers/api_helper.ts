@@ -1,51 +1,44 @@
-import axios from "axios"
+import axios from "axios";
 import { API_URL } from "../lib/env";
 
-const token = localStorage.getItem('accessToken')
+const axiosApi = axios.create({ baseURL: API_URL });
 
-const axiosApi = axios.create({
-  baseURL: API_URL,
-})
+// Always attach latest token + proper prefix
+axiosApi.interceptors.request.use(cfg => {
+  const token = localStorage.getItem("accessToken");
+  if (token) {
+    cfg.headers.Authorization = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
+  }
+  // If sending an array, ensure JSON header
+  if (Array.isArray(cfg.data)) {
+    cfg.headers["Content-Type"] = "application/json";
+  }
+  return cfg;
+});
 
-axiosApi.defaults.headers.common["Authorization"] = token
+axiosApi.interceptors.response.use(r => r, e => Promise.reject(e));
 
-export function setAuthToken(token: string) {
-  axiosApi.defaults.headers.common["Authorization"] = token
+export function setAuthToken(token) {
+  axiosApi.defaults.headers.common.Authorization =
+    token?.startsWith("Bearer ") ? token : `Bearer ${token}`;
 }
 
-axiosApi.interceptors.response.use(
-  response => response,
-  error => Promise.reject(error)
-)
-
-export async function get(url : string, config = {}) {
-  return await axiosApi.get(url, { ...config }).then(response => response.data)
+export function get(url, config = {}) {
+  return axiosApi.get(url, config).then(r => r.data);
 }
 
-export async function getBlob(url : string, config = {}) {
-  return await axiosApi.get(url, { ...config, responseType: 'blob' }).then(response => response)
+export function getBlob(url, config = {}) {
+  return axiosApi.get(url, { ...config, responseType: "blob" });
 }
 
-export async function post(url : string, data : any, config = {}) {
-  return await axiosApi
-    .post(url, { ...data }, { ...config })
-    .then(response => response.data)
+export function post(url, data, config = {}) {
+  return axiosApi.post(url, data, config).then(r => r.data); // ✅ no spread
 }
 
-export async function put(url : string, data : any, config = {}) {
-  return axiosApi
-    .put(url, { ...data }, { ...config })
-    .then(response => response.data)
+export function put(url, data, config = {}) {
+  return axiosApi.put(url, data, config).then(r => r.data);  // ✅ no spread
 }
 
-export async function del(url : string, config = {}) {
-  return await axiosApi
-    .delete(url, { ...config })
-    .then(response => response.data)
-}
-
-export async function postFormData(url : string, data : any, config = {}) {
-  return await axiosApi
-    .post(url, data, { ...config })
-    .then(response => response.data)
+export function del(url, config = {}) {
+  return axiosApi.delete(url, config).then(r => r.data);
 }

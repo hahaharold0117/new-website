@@ -19,3 +19,18 @@ export const num = (v) => {
   return Number.isFinite(n) ? n : 0;
 };
 
+// helpers (place above the component or in a utils file)
+const sortKeys = v =>
+  Array.isArray(v)
+    ? v.map(sortKeys).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))
+    : v && typeof v === "object"
+    ? Object.keys(v).sort().reduce((o, k) => ((o[k] = sortKeys(v[k])), o), {})
+    : v;
+
+const stableStringify = v => JSON.stringify(sortKeys(v));
+const linkKey = v => stableStringify(Array.isArray(v) ? v : []);
+export const itemKey = x =>
+  `${x.id}__L:${linkKey(x.basketLinkedMenuData)}__T:${linkKey(x.basketTopLevelLinkedMenuData)}`;
+export const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+
+

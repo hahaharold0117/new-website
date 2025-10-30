@@ -1,9 +1,9 @@
 // components/MenuModal.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getMenuImageUrl, priceFor } from "../../lib/utils";
+import { getMenuImageUrl, priceFor, itemKey, round2 } from "../../lib/utils";
 import { LS_KEY } from "../../lib/env";
-import { addBucketItem, updateBucketItem } from "@/store/bucket/actions";
+import { addBucketItem, updateBucketItem, updateBucketItemByIndex } from "@/store/bucket/actions";
 
 export default function MenuModal({
   show = false,
@@ -15,8 +15,8 @@ export default function MenuModal({
   mode = "edit",
   editIndex = null,
   originalItem = null,
-  onClose = () => {},
-  onConfirm = (_payload) => {},
+  onClose = () => { },
+  onConfirm = (_payload) => { },
 }) {
   const dispatch = useDispatch();
   const { toplevel_linke_menu, menu_items } = useSelector((s: any) => s.menu);
@@ -189,15 +189,13 @@ export default function MenuModal({
   };
 
   const tileClasses = (selected) =>
-    `text-left rounded-xl px-3 py-3 border shadow-sm transition ${
-      selected
-        ? "border-[var(--brand)] ring-2 ring-[var(--brand)]/30 bg-white"
-        : "border-neutral-200 bg-neutral-100 hover:bg-neutral-50"
+    `text-left rounded-xl px-3 py-3 border shadow-sm transition ${selected
+      ? "border-[var(--brand)] ring-2 ring-[var(--brand)]/30 bg-white"
+      : "border-neutral-200 bg-neutral-100 hover:bg-neutral-50"
     }`;
 
   const totalPrice = (itemPrice + topLevelLinkedItemPrice + linkedItemPrice) * qty;
 
-  // ---- Confirm handler: ADD or EDIT based on mode ----
   const confirm = () => {
     const payload = {
       id: productId,
@@ -210,24 +208,46 @@ export default function MenuModal({
       image: imgSrc,
     };
 
-    // persist to Redux + localStorage
     try {
       const raw = localStorage.getItem(LS_KEY);
       const arr = raw ? JSON.parse(raw) : [];
-
       if (mode === "add") {
+
+        const key = itemKey(payload);
+        const idx = Array.isArray(arr) ? arr.findIndex(x => itemKey(x) === key) : -1;
+
+        if (idx !== -1) {
+          const existing = arr[idx];
+          const unit = (payload.totalPrice || 0) / Math.max(payload.quantity || 1, 1);
+          const nextQty = (existing.quantity || 1) + (payload.quantity || 1);
+          const updated = {
+            ...existing,
+            quantity: nextQty,
+            totalPrice: round2(nextQty * unit),
+            editedAt: Date.now(),
+          };
+
+          // Redux: replace at index
+          dispatch(updateBucketItemByIndex({ index: idx, item: updated }));
+
+          // localStorage: replace at index
+          const next = [...arr];
+          next[idx] = updated;
+          localStorage.setItem(LS_KEY, JSON.stringify(next));
+
+          onConfirm(updated);
+          return;
+        }
+
         const withKey = { ...payload, addedAt: Date.now() };
-        // Redux
         dispatch(addBucketItem(withKey));
-        // localStorage
         const next = Array.isArray(arr) ? [...arr, withKey] : [withKey];
         localStorage.setItem(LS_KEY, JSON.stringify(next));
-        onConfirm(withKey); // still bubble up if parent wants to react
+        onConfirm(withKey);
+
       } else {
-        // "edit" mode: replace at index if provided, else find by addedAt
         const stableKey = originalItem?.addedAt ?? Date.now();
         const edited = { ...payload, addedAt: stableKey, editedAt: Date.now() };
-
         // Redux
         if (Number.isInteger(editIndex)) {
           dispatch(updateBucketItem(editIndex, edited));
@@ -266,7 +286,7 @@ export default function MenuModal({
         dispatch(addBucketItem(withKey));
         try {
           localStorage.setItem(LS_KEY, JSON.stringify([withKey]));
-        } catch {}
+        } catch { }
         onConfirm(withKey);
       } else {
         const stableKey = originalItem?.addedAt ?? Date.now();
@@ -278,13 +298,11 @@ export default function MenuModal({
         }
         try {
           localStorage.setItem(LS_KEY, JSON.stringify([edited]));
-        } catch {}
+        } catch { }
         onConfirm(edited);
       }
     }
   };
-
-  const footerLabel = mode === "add" ? "Add to Order" : "Save";
 
   return (
     <div

@@ -5,7 +5,7 @@ import { useMain } from "@/contexts/main-context";
 import SubMenuModal from './SubMenuModal'
 import MenuModal from './MenuModal'
 import { LS_KEY } from '../../lib/env'
-import { addBucketItem } from '@/store/actions'
+import { addBucketItem, updateBucketItemByIndex } from '@/store/actions'
 
 export default function ProductCard({ item }: any) {
   const dispatch = useDispatch();
@@ -16,9 +16,9 @@ export default function ProductCard({ item }: any) {
   const [showMenuModal, setShowMenuModal] = useState(false)
   const [linkedMenuData, setLinkedMenuData] = useState([])
   const { toplevel_linke_menu, menu_items, order_type } = useSelector((state: any) => state.menu);
+  const { bucket_items } = useSelector((state: any) => state.bucket);
 
   const isDisabled = !Boolean(item?.Active);
-
   const rawPrice = order_type === "delivery" ? item?.Delivery_Price : item?.Collection_Price;
 
   const displayPrice = (() => {
@@ -122,27 +122,55 @@ export default function ProductCard({ item }: any) {
           setShowMenuModal(true);
           return;
         }
-        // const maybe = item?.BackImage != null ? getMenuImageUrl(item?.BackImage) : "";
-        // const imgSrc = typeof maybe === "string" && maybe.trim() ? maybe : "/default-menu-category.png";
-        const payload = {
-          id: item?.id,
-          Name: item?.Name,
-          menuItem: item,
-          quantity: 1,
-          totalPrice: priceFor(item, order_type),
-          basketTopLevelLinkedMenuData: toplevel_linke_menu,
-          basketLinkedMenuData: linkedMenuData,
-          addedAt: Date.now(),
-          image: imgSrc,
-        };
 
-        dispatch(addBucketItem(payload));
-        try {
-          const existing = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
-          const next = Array.isArray(existing) ? [...existing, payload] : [payload];
-          localStorage.setItem(LS_KEY, JSON.stringify(next));
-        } catch {
-          localStorage.setItem(LS_KEY, JSON.stringify([payload]));
+        const unit = priceFor(item, order_type);
+        const idx = bucket_items.findIndex(x => {
+          const noLinks = !x.basketLinkedMenuData?.length && !x.basketTopLevelLinkedMenuData?.length;
+          return noLinks && x.id === item.id;
+        });
+
+        if (idx !== -1) {
+          // bump quantity on existing row
+          const existing = bucket_items[idx];
+          const nextQty = (existing.quantity || 1) + 1;
+          const updated = {
+            ...existing,
+            quantity: nextQty,
+            totalPrice: unit * nextQty,
+            addedAt: Date.now(),
+          };
+
+          dispatch(updateBucketItemByIndex({ index: idx, item: updated }));
+
+          try {
+            const arr = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+            if (Array.isArray(arr)) {
+              arr[idx] = updated;
+              localStorage.setItem(LS_KEY, JSON.stringify(arr));
+            }
+          } catch { }
+        } else {
+          // add new row
+          const payload = {
+            id: item?.id,
+            Name: item?.Name,
+            menuItem: item,
+            quantity: 1,
+            totalPrice: unit,
+            basketTopLevelLinkedMenuData: [],
+            basketLinkedMenuData: [],
+            addedAt: Date.now(),
+            image: imgSrc,
+          };
+
+          dispatch(addBucketItem(payload));
+          try {
+            const existing = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+            const next = Array.isArray(existing) ? [...existing, payload] : [payload];
+            localStorage.setItem(LS_KEY, JSON.stringify(next));
+          } catch {
+            localStorage.setItem(LS_KEY, JSON.stringify([payload]));
+          }
         }
 
         setShowMenuModal(false);
@@ -207,11 +235,11 @@ export default function ProductCard({ item }: any) {
       </div>
       <MenuModal
         show={showMenuModal}
-        mode="add"                          // ← makes Confirm do an ADD
+        mode="add"
         menuItem={menuItem}
-        orderType={order_type}              // string OK; modal coerces to "pickup"|"delivery"
-        linkedMenuData={linkedMenuData}     // ← rename prop
-        quantity={1}                 // optional
+        orderType={order_type}
+        linkedMenuData={linkedMenuData}
+        quantity={1}
         onClose={() => setShowMenuModal(false)}
         onConfirm={(added) => {
         }}

@@ -19,3 +19,8 @@ export const updateBucketItem = (index, item) => ({
   type: BucketActionTypes.UPDATE_BUCKET_ITEM,
   payload: { index, item },
 });
+
+export const updateBucketItemByIndex = (payload) => ({
+  type: BucketActionTypes.UPDATE_BUCKET_ITEM_INDEX,
+  payload,
+});

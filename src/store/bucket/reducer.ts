@@ -2,6 +2,7 @@ import { BucketActionTypes } from "./actionTypes";
 
 export const INIT_STATE: any = {
   bucket_items: [],
+  delivery_charge_amount: 0,
   error: {},
   loading: false,
   success: false,
@@ -38,12 +39,17 @@ const bucket = (state = INIT_STATE, action: any) => {
       const { index, item, patch } = action.payload || {};
       if (index < 0 || index >= state.bucket_items.length) return state;
 
-      const current   = state.bucket_items[index];
-      const nextItem  = item ?? { ...current, ...(patch || {}) }; // supports full replace or partial merge
+      const current = state.bucket_items[index];
+      const nextItem = item ?? { ...current, ...(patch || {}) }; // supports full replace or partial merge
       const nextArray = state.bucket_items.map((x, i) => (i === index ? nextItem : x));
 
       return { ...state, bucket_items: nextArray };
     }
+    case BucketActionTypes.SET_DELIVERY_CHARGE_AMOUNT:
+      return {
+        ...state,
+        delivery_charge_amount: action.payload
+      };
     default:
       return state;
   }

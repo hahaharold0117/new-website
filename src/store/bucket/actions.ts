@@ -24,3 +24,10 @@ export const updateBucketItemByIndex = (payload) => ({
   type: BucketActionTypes.UPDATE_BUCKET_ITEM_INDEX,
   payload,
 });
+
+export const setDeliveryChargeAmount = (amount) => ({
+  type: BucketActionTypes.SET_DELIVERY_CHARGE_AMOUNT,
+  payload: amount,
+});
+
+

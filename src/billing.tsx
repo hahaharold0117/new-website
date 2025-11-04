@@ -8,11 +8,11 @@ import moment from 'moment-timezone';
 import { createOrder, createOrderDetailBatch, getAllDeliveryChargesByRestaurantId } from '@/helpers/backend_helper'
 import { useNavigate } from "react-router-dom";
 import Field from '@/components/forms/Field'
-import FieldWithIcon from '@/components/forms/FieldWithIcon'
+import AddressSelect from '@/components/forms/AddressSelect'
 import axios from "axios";
 import { getAddressApiKey } from '@/constants/Config'
-import {setDeliveryChargeAmount} from '@/store/actions'
-
+import { setDeliveryChargeAmount, setTipAmount, resetBucket } from '@/store/actions'
+import { LS_KEY } from "./lib/env";
 
 type Payment = "cash" | "card";
 
@@ -23,7 +23,7 @@ export default function BillingPage() {
   const [payment, setPayment] = useState<Payment>("cash");
   const [tip, setTip] = useState<number>(0);
   const [showAuthModal, setShowAuthModal] = useState(false)
-  const { bucket_items } = useSelector((state: any) => state.bucket);
+  const { bucket_items, delivery_charge_amount } = useSelector((state: any) => state.bucket);
   const { order_type } = useSelector((state: any) => state.menu);
   const [loading, setLoading] = useState(false);
   const [deliveryCharges, setDeliveryCharges] = useState([])
@@ -46,6 +46,15 @@ export default function BillingPage() {
     ? (restaurant as { id: number | string }).id
     : undefined;
 
+  const restaurantPostCode =
+    restaurant && typeof restaurant === "object" && "PostCode" in restaurant
+      ? (restaurant as { PostCode?: string }).PostCode
+      : undefined;
+
+  useEffect(() => {
+   dispatch(setTipAmount(tip))
+  }, [tip]);
+
   useEffect(() => {
     if (!restaurantId) return;
 
@@ -65,6 +74,50 @@ export default function BillingPage() {
     return () => { cancelled = true; };
   }, [restaurantId]);
 
+  useEffect(() => {
+    if (order_type !== "delivery") {
+      dispatch(setDeliveryChargeAmount(0));
+      return;
+    }
+    if (!deliveryCharges?.length || !restaurantPostCode) {
+      dispatch(setDeliveryChargeAmount(0));
+      return;
+    }
+
+    const mode = deliveryCharges[0]?.Mode;
+    const allSameMode = deliveryCharges.every(c => c.Mode === mode);
+    if (!allSameMode) {
+      console.warn("❌ Mode values are not consistent across records.");
+      dispatch(setDeliveryChargeAmount(0));
+      return;
+    }
+
+    if (mode !== "Mileage") {
+      dispatch(setDeliveryChargeAmount(0));
+      return;
+    }
+    const pc = (form.postcode || "").trim().toUpperCase();
+
+    let cancelled = false;
+    const handle = setTimeout(async () => {
+      try {
+        const amount = await handleMileageMode(deliveryCharges, restaurant, pc);
+        if (!cancelled) {
+          dispatch(setDeliveryChargeAmount(Number(amount || 0)));
+        }
+      } catch (err) {
+        console.error("Mileage calc failed:", err);
+        if (!cancelled) dispatch(setDeliveryChargeAmount(0));
+      }
+    }, 600);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
+  }, [form.postcode, order_type, deliveryCharges, restaurant, dispatch]);
+
+
 
   const onFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -78,11 +131,9 @@ export default function BillingPage() {
     const nameOk = (v: string) => v.trim().length >= 2;
     const when = order_type === "pickup" ? "Pickup" : "Delivery";
 
-    // Names (required, ≥2 chars)
     if (!nameOk(form.firstName)) e.firstName = "Please enter your first name.";
     if (!nameOk(form.lastName)) e.lastName = "Please enter your last name.";
 
-    // Date/Time (always required; must be in the future)
     if (!req(form.orderDate)) e.orderDate = `${when} date is required.`;
     if (!req(form.orderTime)) e.orderTime = `${when} time is required.`;
     if (req(form.orderDate) && req(form.orderTime)) {
@@ -125,7 +176,6 @@ export default function BillingPage() {
   };
 
   function computeSubtotal(items: any[]) {
-    // expects each item to have { quantity, totalPrice } or { quantity, menuItem.price }
     return items.reduce((sum, it) => {
       const qty = Number(it.quantity || 1);
       const line =
@@ -142,7 +192,6 @@ export default function BillingPage() {
       const meters = response?.data?.metres;
       if (!meters) return;
       const miles = Math.round(meters / 1609.34);
-      // Find matching mileage range
       const match = deliveryCharges.find(charge =>
         miles >= charge.StartMileage && miles <= charge.EndMileage
       );
@@ -150,7 +199,6 @@ export default function BillingPage() {
       if (match?.DeliveryCharge) {
         return match?.DeliveryCharge
       } else {
-        // Fallback: use the highest charge
         const highest = deliveryCharges.reduce((prev, curr) =>
           curr.EndMileage > prev.EndMileage ? curr : prev
         );
@@ -169,11 +217,9 @@ export default function BillingPage() {
   const handleOrder = async () => {
     if (loading) return;
     setSubmitted(true);
-    // run validation
     const vErrors = validate();
     setErrors(vErrors);
     if (Object.keys(vErrors).length) {
-      // focus first invalid field
       const firstKey = Object.keys(vErrors)[0];
       const el = document.getElementById(`field-${firstKey}`) as
         | HTMLInputElement
@@ -188,7 +234,7 @@ export default function BillingPage() {
       const raw = localStorage.getItem("authUser");
       if (!raw) {
         setShowAuthModal(true);
-        return; // finally{} will run and stop the spinner
+        return;
       }
 
       if (!bucket_items.length) {
@@ -199,27 +245,8 @@ export default function BillingPage() {
       const dtCreated = moment().tz('Europe/London').format('YYYY-MM-DDTHH:mm:ss');
 
       const serviceCharge = 0;
-      let deliveryCharge = 0;
+      let deliveryCharge = delivery_charge_amount;
       const discount = 0;
-
-      //calcualte delivery charge amount
-      if (order_type === 'delivery') {
-        if (deliveryCharges.length > 0) {
-          const mode = deliveryCharges[0].Mode;
-          const allSameMode = deliveryCharges.every(charge => charge.Mode === mode);
-          if (!allSameMode) {
-            console.warn('❌ Mode values are not consistent across records.');
-            return;
-          }
-          if (mode === 'Mileage') {
-            const delivery_charge_amount = await handleMileageMode(deliveryCharges, restaurant, form.postcode);
-            if (delivery_charge_amount) {
-              dispatch(setDeliveryChargeAmount(delivery_charge_amount));
-              deliveryCharge = delivery_charge_amount;
-            }
-          }
-        }
-      }
 
       const subtotal = computeSubtotal(bucket_items);
       const totalAmount = subtotal + (Number(tip) || 0) + serviceCharge + deliveryCharge;
@@ -263,85 +290,84 @@ export default function BillingPage() {
         updatedAt: dtCreated,
       };
 
-      console.log('order Data =>', orderData)
+      const createOrderRes = await createOrder(orderData);
+      console.log('createOrderRes =>', createOrderRes)
 
-      // const createOrderRes = await createOrder(orderData);
-      // console.log('createOrderRes =>', createOrderRes)
+      if (createOrderRes?.success) {
+        const result = createOrderRes.result;
+        result.Table_No = "";
+        result.Table_Area_Name = "";
 
+        const order_details = bucket_items.map((basketItem) => {
+          let linkedDataReceipt = [];
+          let DressingData = "";
 
-      // if (createOrderRes?.success) {
-      //   const result = createOrderRes.result;
-      //   result.Table_No = "";
-      //   result.Table_Area_Name = "";
+          if (basketItem?.basketLinkedMenuData?.length) {
+            basketItem.basketLinkedMenuData.forEach((element) => {
+              element.menu_items.forEach((menuItem) => {
+                if (menuItem.selected) {
+                  DressingData += menuItem.Name + ",";
+                  linkedDataReceipt.push({
+                    linkedCategoryName: element.menu_category.Name,
+                    linkedMenuItem: { menu_item_name: menuItem.Name, price: menuItem.Collection_Price },
+                  });
+                }
+              });
+            });
+          }
 
-      //   const order_details = bucket_items.map((basketItem) => {
-      //     let linkedDataReceipt = [];
-      //     let DressingData = "";
+          if (basketItem?.basketTopLevelLinkedMenuData?.length) {
+            basketItem.basketTopLevelLinkedMenuData.forEach((element) => {
+              element.topLevelLinkedMenuItems.forEach((menuItem) => {
+                if (menuItem?.selected) {
+                  DressingData += menuItem.Name + ",";
+                  linkedDataReceipt.push({
+                    linkedCategoryName: element.topLevelLinkedCategory.Name,
+                    linkedMenuItem: { menu_item_name: menuItem?.Name, price: menuItem?.Collection_Price },
+                  });
+                }
+              });
+            });
+          }
 
-      //     if (basketItem?.basketLinkedMenuData?.length) {
-      //       basketItem.basketLinkedMenuData.forEach((element) => {
-      //         element.menu_items.forEach((menuItem) => {
-      //           if (menuItem.selected) {
-      //             DressingData += menuItem.Name + ",";
-      //             linkedDataReceipt.push({
-      //               linkedCategoryName: element.menu_category.Name,
-      //               linkedMenuItem: { menu_item_name: menuItem.Name, price: menuItem.Collection_Price },
-      //             });
-      //           }
-      //         });
-      //       });
-      //     }
+          const linkedDataReceiptTemp = {
+            detailData: linkedDataReceipt,
+            basketItem,
+          };
 
-      //     if (basketItem?.basketTopLevelLinkedMenuData?.length) {
-      //       basketItem.basketTopLevelLinkedMenuData.forEach((element) => {
-      //         element.topLevelLinkedMenuItems.forEach((menuItem) => {
-      //           if (menuItem?.selected) {
-      //             DressingData += menuItem.Name + ",";
-      //             linkedDataReceipt.push({
-      //               linkedCategoryName: element.topLevelLinkedCategory.Name,
-      //               linkedMenuItem: { menu_item_name: menuItem?.Name, price: menuItem?.Collection_Price },
-      //             });
-      //           }
-      //         });
-      //       });
-      //     }
+          return {
+            OrderId: result.id,
+            Menu_Item_Name: basketItem.Name,
+            Price: basketItem.Collection_Price,
+            MenuItemId: basketItem.id,
+            SubMenuItemId: basketItem?.subMenuId || null,
+            ItemLevel: 1,
+            Dressing: DressingData,
+            orderDate: dtCreated,
+            VatRate: 1,
+            VatAmount: 1,
+            Quantity: basketItem.quantity,
+            Status: 1,
+            LinkedDataReceipt: JSON.stringify(linkedDataReceiptTemp),
+          };
+        });
 
-      //     const linkedDataReceiptTemp = {
-      //       detailData: linkedDataReceipt,
-      //       basketItem,
-      //     };
-
-      //     return {
-      //       OrderId: result.id,
-      //       Menu_Item_Name: basketItem.Name,
-      //       Price: basketItem.Collection_Price,
-      //       MenuItemId: basketItem.id,
-      //       SubMenuItemId: basketItem?.subMenuId || null,
-      //       ItemLevel: 1,
-      //       Dressing: DressingData,
-      //       orderDate: dtCreated,
-      //       VatRate: 1,
-      //       VatAmount: 1,
-      //       Quantity: basketItem.quantity,
-      //       Status: 1,
-      //       LinkedDataReceipt: JSON.stringify(linkedDataReceiptTemp),
-      //     };
-      //   });
-
-      //   const createOrderDetailRes = await createOrderDetailBatch(order_details);
-
-      //   if (createOrderDetailRes?.success) {
-      //     // navigate('/success');
-      //     navigate("/success", {
-      //       state: {
-      //         orderId: result.id,
-      //         total: Number(totalAmount.toFixed(2)),
-      //         payment,                // "cash" | "card"
-      //         orderType: order_type,  // "pickup" | "delivery"
-      //       },
-      //     });
-      //   }
-      // }
+        const createOrderDetailRes = await createOrderDetailBatch(order_details);
+        console.log('createOrderDetailRes =>', createOrderDetailRes)
+        if (createOrderDetailRes?.success) {
+          //reset store data and localstorage
+          dispatch(resetBucket())
+          
+          navigate("/success", {
+            state: {
+              orderId: result.id,
+              total: Number(totalAmount.toFixed(2)),
+              payment,
+              orderType: order_type,
+            },
+          });
+        }
+      }
     } catch (error) {
       console.log('error =>', error);
     } finally {
@@ -440,7 +466,6 @@ export default function BillingPage() {
             {order_type === "delivery" && (
               <div className="md:col-span-2 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:p-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Postcode */}
                   <Field
                     label="Postcode*"
                     name="postcode"
@@ -451,17 +476,14 @@ export default function BillingPage() {
                     required
                   />
 
-                  {/* Search Address with magnifier icon */}
-                  <FieldWithIcon
-                    label="Search Address*"
+                  <AddressSelect
+                    label="Search Address"
                     name="address"
+                    postcode={form.postcode}
                     value={form.address}
-                    onChange={onFieldChange}
-                    placeholder="Address"
+                    onSelect={(addr) => setForm(prev => ({ ...prev, address: addr }))}
                     error={submitted ? errors.address : ""}
                     required
-                    inputId="field-address"
-                    inputProps={{ autoComplete: "street-address", enterKeyHint: "search" }}
                   />
                 </div>
               </div>

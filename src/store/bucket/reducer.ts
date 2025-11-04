@@ -3,6 +3,7 @@ import { BucketActionTypes } from "./actionTypes";
 export const INIT_STATE: any = {
   bucket_items: [],
   delivery_charge_amount: 0,
+  tip_amount: 0,
   error: {},
   loading: false,
   success: false,
@@ -50,6 +51,17 @@ const bucket = (state = INIT_STATE, action: any) => {
         ...state,
         delivery_charge_amount: action.payload
       };
+
+    case BucketActionTypes.SET_TIP_AMOUNT:
+      return {
+        ...state,
+        tip_amount: action.payload
+      };
+
+    case BucketActionTypes.RESET_BUCKET:
+      console.log('xxxx =>', INIT_STATE)
+      return { ...INIT_STATE };
+
     default:
       return state;
   }

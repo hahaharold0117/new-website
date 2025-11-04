@@ -11,7 +11,7 @@ export default function OrderSummary() {
   const dispatch = useDispatch();
   const [orderType, setOrderType] = useState<OrderType | null>(null);
   const { restaurant } = useMain() as { restaurant: Restaurant };
-  const { bucket_items } = useSelector((state: any) => state.bucket);
+  const { bucket_items, delivery_charge_amount, tip_amount } = useSelector((state: any) => state.bucket);
 
   // Build address from restaurant fields
   const street = restaurant?.Street?.trim();
@@ -82,14 +82,21 @@ export default function OrderSummary() {
 
   function Totals({ bucketItems }) {
     const subtotal = bucketItems.reduce((acc, it) => acc + lineTotalOf(it), 0);
-    const shipping = 0;
     return (
       <>
         <Row label="Subtotal" value={`£ ${subtotal.toFixed(2)}`} />
-        <Row label="Shipping" value={`£ ${shipping.toFixed(2)}`} />
+        {orderType === 'delivery' && (
+          <Row label="Shipping" value={`£ ${delivery_charge_amount.toFixed(2)}`} />
+        )}
+        {tip_amount > 0 && (
+          <Row label="Tip" value={`£ ${tip_amount.toFixed(2)}`} />
+        )}
         <div className="mt-2 flex items-center justify-between text-base font-bold">
           <div>Total</div>
-          <div>£ {(subtotal + shipping).toFixed(2)}</div>
+          {/* fixed width + left aligned so all £ start in the same column */}
+          <div className="font-mono tabular-nums w-24 text-left">
+            £ {(subtotal + delivery_charge_amount + tip_amount).toFixed(2)}
+          </div>
         </div>
       </>
     );
@@ -99,10 +106,13 @@ export default function OrderSummary() {
     return (
       <div className="flex items-center justify-between text-sm">
         <div className="text-neutral-600">{label}</div>
-        <div className="font-medium">{value}</div>
+        <div className="font-medium font-mono tabular-nums w-24 text-left">
+          {value}
+        </div>
       </div>
     );
   }
+
 
   return (
     <aside

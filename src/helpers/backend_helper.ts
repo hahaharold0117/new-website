@@ -6,11 +6,13 @@ const customerLoginAsync = (data: any) => post(url.CUSTOMER_LOGIN, data)
 const customerSignupAsync = (data: any) => post(url.CUSTOMER_SIGNUP, data)
 const createOrder = (orderItem: any) => post(url.CREATE_ORDER, orderItem);
 const createOrderDetailBatch = (detailBatchData: any) => post(url.BATCH_CREATE_ORDER, detailBatchData)
+const getAllDeliveryChargesByRestaurantId = (id: any) => get(`${url.GET_DELIVERY_CHARGES_BY_RESTAURANTID}/${id}`)
 
 export {
   getMainSettingData,
   customerLoginAsync,
   customerSignupAsync,
   createOrder,
-  createOrderDetailBatch
+  createOrderDetailBatch,
+  getAllDeliveryChargesByRestaurantId
 }

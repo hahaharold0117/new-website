@@ -5,27 +5,177 @@ import AuthPageModal from "@/components/AuthPageModal"
 import { useMain } from "@/contexts/main-context";
 import { useSelector, useDispatch } from "react-redux";
 import moment from 'moment-timezone';
-import { createOrder, createOrderDetailBatch } from '@/helpers/backend_helper'
+import { createOrder, createOrderDetailBatch, getAllDeliveryChargesByRestaurantId } from '@/helpers/backend_helper'
 import { useNavigate } from "react-router-dom";
+import Field from '@/components/forms/Field'
+import AddressSelect from '@/components/forms/AddressSelect'
+import axios from "axios";
+import { getAddressApiKey } from '@/constants/Config'
+import { setDeliveryChargeAmount, setTipAmount, resetBucket } from '@/store/actions'
+import { LS_KEY } from "./lib/env";
 
 type Payment = "cash" | "card";
 
 export default function BillingPage() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { restaurant } = useMain();
   const [payment, setPayment] = useState<Payment>("cash");
   const [tip, setTip] = useState<number>(0);
   const [showAuthModal, setShowAuthModal] = useState(false)
-  const { bucket_items } = useSelector((state: any) => state.bucket);
+  const { bucket_items, delivery_charge_amount } = useSelector((state: any) => state.bucket);
   const { order_type } = useSelector((state: any) => state.menu);
   const [loading, setLoading] = useState(false);
+  const [deliveryCharges, setDeliveryCharges] = useState([])
+
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    orderDate: "",
+    orderTime: "",
+    postcode: "",
+    address: ""
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitted, setSubmitted] = useState(false);
 
   const restaurantId = restaurant && typeof restaurant === "object" && "id" in restaurant
     ? (restaurant as { id: number | string }).id
     : undefined;
 
+  const restaurantPostCode =
+    restaurant && typeof restaurant === "object" && "PostCode" in restaurant
+      ? (restaurant as { PostCode?: string }).PostCode
+      : undefined;
+
+  useEffect(() => {
+   dispatch(setTipAmount(tip))
+  }, [tip]);
+
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getAllDeliveryChargesByRestaurantId(restaurantId);
+        const payload = (res && typeof res === 'object' && 'data' in res)
+          ? (res as { data: any }).data
+          : res;
+        if (!cancelled) setDeliveryCharges(payload?.result ?? []);
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [restaurantId]);
+
+  useEffect(() => {
+    if (order_type !== "delivery") {
+      dispatch(setDeliveryChargeAmount(0));
+      return;
+    }
+    if (!deliveryCharges?.length || !restaurantPostCode) {
+      dispatch(setDeliveryChargeAmount(0));
+      return;
+    }
+
+    const mode = deliveryCharges[0]?.Mode;
+    const allSameMode = deliveryCharges.every(c => c.Mode === mode);
+    if (!allSameMode) {
+      console.warn("❌ Mode values are not consistent across records.");
+      dispatch(setDeliveryChargeAmount(0));
+      return;
+    }
+
+    if (mode !== "Mileage") {
+      dispatch(setDeliveryChargeAmount(0));
+      return;
+    }
+    const pc = (form.postcode || "").trim().toUpperCase();
+
+    let cancelled = false;
+    const handle = setTimeout(async () => {
+      try {
+        const amount = await handleMileageMode(deliveryCharges, restaurant, pc);
+        if (!cancelled) {
+          dispatch(setDeliveryChargeAmount(Number(amount || 0)));
+        }
+      } catch (err) {
+        console.error("Mileage calc failed:", err);
+        if (!cancelled) dispatch(setDeliveryChargeAmount(0));
+      }
+    }, 600);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
+  }, [form.postcode, order_type, deliveryCharges, restaurant, dispatch]);
+
+
+
+  const onFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+
+  const validate = () => {
+    const e: Record<string, string> = {};
+    const req = (v?: string) => !!(v && v.trim().length);
+    const nameOk = (v: string) => v.trim().length >= 2;
+    const when = order_type === "pickup" ? "Pickup" : "Delivery";
+
+    if (!nameOk(form.firstName)) e.firstName = "Please enter your first name.";
+    if (!nameOk(form.lastName)) e.lastName = "Please enter your last name.";
+
+    if (!req(form.orderDate)) e.orderDate = `${when} date is required.`;
+    if (!req(form.orderTime)) e.orderTime = `${when} time is required.`;
+    if (req(form.orderDate) && req(form.orderTime)) {
+      const dt = moment.tz(`${form.orderDate}T${form.orderTime}`, "Europe/London");
+      if (!dt.isValid()) {
+        e.orderTime = "Invalid date/time.";
+      } else if (dt.isBefore(moment().tz("Europe/London"))) {
+        e.orderTime = `${when} time must be in the future.`;
+      }
+    }
+
+    // Email (required + format)
+    if (!req(form.email)) {
+      e.email = "Email is required.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      e.email = "Enter a valid email.";
+    }
+
+    // Phone (required + min digits)
+    const digits = (form.phone || "").replace(/\D/g, "");
+    if (!req(form.phone)) {
+      e.phone = "Phone is required.";
+    } else if (digits.length < 7) {
+      e.phone = "Phone looks too short.";
+    }
+
+    // Delivery-only fields
+    if (order_type === "delivery") {
+      const UK_POSTCODE =
+        /^([Gg][Ii][Rr]\s?0[Aa]{2})|((([A-Za-z][0-9]{1,2})|([A-Za-z][A-HJ-Ya-hj-y][0-9]{1,2})|([A-Za-z][0-9][A-Za-z])|([A-Za-z][A-HJ-Ya-hj-y][0-9][A-Za-z]))\s?[0-9][A-Za-z]{2})$/;
+
+      const pc = (form.postcode || "").trim().toUpperCase();
+      if (!req(pc)) e.postcode = "Postcode is required.";
+      else if (!UK_POSTCODE.test(pc)) e.postcode = "Enter a valid UK postcode.";
+
+      if (!req(form.address)) e.address = "Address is required.";
+    }
+
+    return e;
+  };
+
   function computeSubtotal(items: any[]) {
-    // expects each item to have { quantity, totalPrice } or { quantity, menuItem.price }
     return items.reduce((sum, it) => {
       const qty = Number(it.quantity || 1);
       const line =
@@ -36,14 +186,55 @@ export default function BillingPage() {
     }, 0);
   }
 
+  const handleMileageMode = async (deliveryCharges: any[], restaurant: any, postcode: string) => {
+    try {
+      const response = await axios.get(`https://api.getAddress.io/distance/${restaurant?.PostCode}/${postcode}?api-key=${getAddressApiKey}`);
+      const meters = response?.data?.metres;
+      if (!meters) return;
+      const miles = Math.round(meters / 1609.34);
+      const match = deliveryCharges.find(charge =>
+        miles >= charge.StartMileage && miles <= charge.EndMileage
+      );
+
+      if (match?.DeliveryCharge) {
+        return match?.DeliveryCharge
+      } else {
+        const highest = deliveryCharges.reduce((prev, curr) =>
+          curr.EndMileage > prev.EndMileage ? curr : prev
+        );
+
+        if (highest?.DeliveryCharge) {
+          return highest?.DeliveryCharge
+        } else {
+          return 0;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching distance:', error);
+    }
+  };
+
   const handleOrder = async () => {
-    if (loading) return; // avoid double-clicks
+    if (loading) return;
+    setSubmitted(true);
+    const vErrors = validate();
+    setErrors(vErrors);
+    if (Object.keys(vErrors).length) {
+      const firstKey = Object.keys(vErrors)[0];
+      const el = document.getElementById(`field-${firstKey}`) as
+        | HTMLInputElement
+        | null;
+      el?.focus();
+      return;
+    }
+
     setLoading(true);
+
     try {
       const raw = localStorage.getItem("authUser");
       if (!raw) {
         setShowAuthModal(true);
-        return; // finally{} will run and stop the spinner
+        return;
       }
 
       if (!bucket_items.length) {
@@ -53,9 +244,9 @@ export default function BillingPage() {
 
       const dtCreated = moment().tz('Europe/London').format('YYYY-MM-DDTHH:mm:ss');
 
-      const serviceCharge = 5;
-      const deliveryCharge = 3;
-      const discount = 2.5;
+      const serviceCharge = 0;
+      let deliveryCharge = delivery_charge_amount;
+      const discount = 0;
 
       const subtotal = computeSubtotal(bucket_items);
       const totalAmount = subtotal + (Number(tip) || 0) + serviceCharge + deliveryCharge;
@@ -162,15 +353,17 @@ export default function BillingPage() {
         });
 
         const createOrderDetailRes = await createOrderDetailBatch(order_details);
-        
+        console.log('createOrderDetailRes =>', createOrderDetailRes)
         if (createOrderDetailRes?.success) {
-          // navigate('/success');
+          //reset store data and localstorage
+          dispatch(resetBucket())
+          
           navigate("/success", {
             state: {
               orderId: result.id,
               total: Number(totalAmount.toFixed(2)),
-              payment,                // "cash" | "card"
-              orderType: order_type,  // "pickup" | "delivery"
+              payment,
+              orderType: order_type,
             },
           });
         }
@@ -211,13 +404,91 @@ export default function BillingPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8">
         <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="First Name *" placeholder="Placeholder" />
-            <Field label="Last Name *" placeholder="Placeholder" />
-            <Field label="Email" placeholder="Placeholder" type="email" />
-            <Field label="Phone" placeholder="Placeholder" type="tel" />
+            <Field
+              label="First Name *"
+              name="firstName"
+              placeholder="First Name"
+              value={form.firstName}
+              onChange={onFieldChange}
+              error={submitted ? errors.firstName : ""}
+              required
+            />
+            <Field
+              label="Last Name *"
+              name="lastName"
+              placeholder="Last Name"
+              value={form.lastName}
+              onChange={onFieldChange}
+              error={submitted ? errors.lastName : ""}
+              required
+            />
+            <Field
+              label={order_type === "pickup" ? "Pickup Date *" : "Delivery Date *"}
+              name="orderDate"
+              type="date"
+              placeholder="Placeholder"
+              value={form.orderDate}
+              onChange={onFieldChange}
+              error={submitted ? errors.orderDate : ""}
+              required
+            />
+            <Field
+              label={order_type === "pickup" ? "Pickup Time *" : "Delivery Time *"}
+              name="orderTime"
+              type="time"
+              placeholder="Placeholder"
+              value={form.orderTime}
+              onChange={onFieldChange}
+              error={submitted ? errors.orderTime : ""}
+              required
+            />
+            <Field
+              label="Email"
+              name="email"
+              type="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={onFieldChange}
+              error={submitted ? errors.email : ""}
+              required
+            />
+            <Field
+              label="Phone"
+              name="phone"
+              type="tel"
+              placeholder="Phone Number"
+              value={form.phone}
+              onChange={onFieldChange}
+              error={submitted ? errors.phone : ""}
+              required
+            />
 
-            <Field label="Pickup Date" placeholder="Placeholder" type="date" />
-            <Field label="Pickup Time" placeholder="Placeholder" type="time" />
+            {order_type === "delivery" && (
+              <div className="md:col-span-2 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:p-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Field
+                    label="Postcode*"
+                    name="postcode"
+                    placeholder="PostCode"
+                    value={form.postcode}
+                    onChange={onFieldChange}
+                    error={submitted ? errors.postcode : ""}
+                    required
+                  />
+
+                  <AddressSelect
+                    label="Search Address"
+                    name="address"
+                    postcode={form.postcode}
+                    value={form.address}
+                    onSelect={(addr) => setForm(prev => ({ ...prev, address: addr }))}
+                    error={submitted ? errors.address : ""}
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
           </div>
 
           {/* Tip selector + Payment */}
@@ -245,10 +516,11 @@ export default function BillingPage() {
               "Place Order"
             )}
           </button>
-
         </section>
+
         <OrderSummary />
       </div>
+
       <AuthPageModal
         show={showAuthModal}
         onClose={() => setShowAuthModal(false)}
@@ -261,28 +533,6 @@ export default function BillingPage() {
   );
 }
 
-function Field({
-  label,
-  placeholder,
-  type = "text",
-}: {
-  label: string;
-  placeholder?: string;
-  type?: string;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-sm font-medium text-neutral-700">
-        {label}
-      </span>
-      <input
-        type={type}
-        placeholder={placeholder}
-        className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 outline-none ring-0 focus:border-neutral-400"
-      />
-    </label>
-  );
-}
 
 function TipBox({
   tip,

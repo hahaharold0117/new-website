@@ -1,5 +1,5 @@
 import { BucketActionTypes } from "./actionTypes";
-
+import { LS_KEY } from '@/lib/env';
 //get all dmin by sitecode
 export const addBucketItem = (data) => ({
   type: BucketActionTypes.ADD_BUCKET_ITEM,
@@ -24,3 +24,18 @@ export const updateBucketItemByIndex = (payload) => ({
   type: BucketActionTypes.UPDATE_BUCKET_ITEM_INDEX,
   payload,
 });
+
+export const setDeliveryChargeAmount = (amount) => ({
+  type: BucketActionTypes.SET_DELIVERY_CHARGE_AMOUNT,
+  payload: amount,
+});
+
+export const setTipAmount = (tip) => ({
+  type: BucketActionTypes.SET_TIP_AMOUNT,
+  payload: tip,
+});
+
+export const resetBucket = () => {
+  try { if (typeof window !== "undefined") localStorage.removeItem(LS_KEY); } catch {}
+  return { type: BucketActionTypes.RESET_BUCKET };
+};

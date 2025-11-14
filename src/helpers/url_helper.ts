@@ -4,3 +4,5 @@ export const CUSTOMER_SIGNUP = '/customers/auth/signup'
 export const CREATE_ORDER = '/orders'
 export const BATCH_CREATE_ORDER = '/orders/details/batch'
 export const GET_DELIVERY_CHARGES_BY_RESTAURANTID = '/delivery-charges/restaurantId'
+export const CREATE_RESERVATION = '/reservations'
+

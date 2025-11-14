@@ -8,11 +8,15 @@ const createOrder = (orderItem: any) => post(url.CREATE_ORDER, orderItem);
 const createOrderDetailBatch = (detailBatchData: any) => post(url.BATCH_CREATE_ORDER, detailBatchData)
 const getAllDeliveryChargesByRestaurantId = (id: any) => get(`${url.GET_DELIVERY_CHARGES_BY_RESTAURANTID}/${id}`)
 
+const createReservation = (data: any) => post(`${url.CREATE_RESERVATION}`, data)
+
+
 export {
   getMainSettingData,
   customerLoginAsync,
   customerSignupAsync,
   createOrder,
   createOrderDetailBatch,
-  getAllDeliveryChargesByRestaurantId
+  getAllDeliveryChargesByRestaurantId,
+  createReservation
 }
